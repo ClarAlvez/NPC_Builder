@@ -63,8 +63,8 @@ const createEmptyNpc = () => ({
     { nome: '', teste: '', dano: '', extra: '' },
     { nome: '', teste: '', dano: '', extra: '' },
   ],
-  habilidades: [''],
-  itens: [''],
+  habilidades: [{ nome: '', descricao: '' }],
+  itens: [{ nome: '', descricao: '' }],
   rituais: [{ nome: '', descricao: '' }],
   agi: 0,
   forca: 0,
@@ -133,16 +133,27 @@ function LineBox({ title, children, className = '' }) {
   );
 }
 
-function RowList({ items, emptyText = '—' }) {
-  const valid = items.filter((item) => item.trim());
-  const list = valid.length ? valid : [emptyText];
+function ComplexList({ items, emptyText = '—' }) {
+  const valid = items.filter(item => {
+    const name = typeof item === 'string' ? item : item.nome;
+    return name && name.trim();
+  });
+
+  if (!valid.length) {
+    return <div className="text-[12px] text-zinc-500 italic">{emptyText}</div>;
+  }
+
   return (
-    <div className="space-y-1 text-[12px] leading-relaxed text-zinc-900">
-      {list.map((item, index) => (
-        <div key={index} className="min-h-[24px] border-b border-zinc-300 pb-1">
-          • {item}
-        </div>
-      ))}
+    <div className="space-y-4 text-[12px] leading-relaxed">
+      {valid.map((item, i) => {
+        const obj = typeof item === 'string' ? { nome: item, descricao: '' } : item;
+        return (
+          <div key={i} className="border-b border-zinc-300 pb-3 last:border-0">
+            <div className="font-bold text-[13px] uppercase tracking-wider text-zinc-900">{obj.nome}</div>
+            {obj.descricao && <div className="mt-1 whitespace-pre-wrap text-zinc-800">{obj.descricao}</div>}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -400,39 +411,26 @@ export default function App() {
     }));
   };
 
-  const handleListChange = (field, index, value) => {
-    updateNpc((npc) => ({
-      ...npc,
-      [field]: npc[field].map((item, i) => (i === index ? value : item)),
-    }));
+  const handleComplexItemChange = (listName, index, field, value) => {
+    updateNpc((npc) => {
+      const newList = npc[listName].map((item, i) => {
+        if (i !== index) return typeof item === 'string' ? { nome: item, descricao: '' } : item;
+        const current = typeof item === 'string' ? { nome: item, descricao: '' } : item;
+        return { ...current, [field]: value };
+      });
+      return { ...npc, [listName]: newList };
+    });
   };
 
-  const addListItem = (field) => {
-    updateNpc((npc) => ({ ...npc, [field]: [...npc[field], ''] }));
+  const addComplexItem = (listName) => {
+    updateNpc((npc) => ({
+      ...npc,
+      [listName]: [...(npc[listName] || []), { nome: '', descricao: '' }]
+    }));
   };
 
   const removeListItem = (field, index) => {
     updateNpc((npc) => ({ ...npc, [field]: npc[field].filter((_, i) => i !== index) }));
-  };
-
-  const handleRitualChange = (index, field, value) => {
-    updateNpc((npc) => {
-      const novosRituais = npc.rituais.map((r, i) => {
-        if (i !== index) {
-          return typeof r === 'string' ? { nome: r, descricao: '' } : r;
-        }
-        const current = typeof r === 'string' ? { nome: r, descricao: '' } : r;
-        return { ...current, [field]: value };
-      });
-      return { ...npc, rituais: novosRituais };
-    });
-  };
-
-  const addRitual = () => {
-    updateNpc((npc) => ({
-      ...npc,
-      rituais: [...npc.rituais, { nome: '', descricao: '' }]
-    }));
   };
 
   const saveAll = () => {
@@ -539,12 +537,14 @@ export default function App() {
           if (classes.includes('text-zinc-500')) return '#71717a';
           if (classes.includes('text-zinc-700')) return '#3f3f46';
           if (classes.includes('text-zinc-900')) return '#18181b';
+          if (classes.includes('text-black')) return '#000000';
           return '#18181b';
         }
         if (prop.includes('Color')) { 
           if (classes.includes('border-zinc-300')) return '#d4d4d8';
           if (classes.includes('border-zinc-900')) return '#18181b';
           if (classes.includes('border-white')) return '#ffffff';
+          if (classes.includes('border-black')) return '#000000';
           return 'transparent';
         }
         return fallback;
@@ -659,7 +659,7 @@ export default function App() {
     { id: 'gerais', label: 'Informações gerais', icon: Shield },
     { id: 'habilidades', label: 'Habilidades', icon: WandSparkles },
     { id: 'rituais', label: 'Rituais', icon: BookOpen },
-    { id: 'informacoes', label: 'Anotações e infos', icon: StickyNote },
+    { id: 'informacoes', label: 'Itens e infos', icon: StickyNote },
   ];
 
   if (!data) return null;
@@ -849,20 +849,40 @@ export default function App() {
             {formTab === 'habilidades' && (
               <>
                 <SectionTitle>Habilidades</SectionTitle>
-                <div className="space-y-3">
-                  {data.habilidades.map((item, index) => (
-                    <div key={index} className="flex gap-2">
-                      <input className={inputStyle} value={item} onChange={(e) => handleListChange('habilidades', index, e.target.value)} placeholder={`Habilidade ${index + 1}`} />
-                      <button onClick={() => removeListItem('habilidades', index)} className="rounded-2xl border border-zinc-800 px-3 hover:border-zinc-500">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                  <button onClick={() => addListItem('habilidades')} className="inline-flex items-center gap-2 rounded-2xl border border-zinc-700 px-3 py-2 text-sm font-semibold hover:border-zinc-500">
+                <div className="space-y-4">
+                  {(data.habilidades || []).map((item, index) => {
+                    const hab = typeof item === 'string' ? { nome: item, descricao: '' } : item;
+                    return (
+                      <div key={index} className="flex flex-col gap-2 rounded-2xl border border-zinc-800 p-3">
+                        <div className="flex gap-2">
+                          <input 
+                            className={inputStyle} 
+                            value={hab.nome} 
+                            onChange={(e) => handleComplexItemChange('habilidades', index, 'nome', e.target.value)} 
+                            placeholder={`Nome da Habilidade ${index + 1}`} 
+                          />
+                          <button onClick={() => removeListItem('habilidades', index)} className="rounded-2xl border border-zinc-800 px-3 hover:border-zinc-500">
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <textarea 
+                          className={textareaStyle} 
+                          value={hab.descricao} 
+                          onChange={(e) => handleComplexItemChange('habilidades', index, 'descricao', e.target.value)} 
+                          placeholder="Descrição da habilidade..." 
+                          rows={3} 
+                        />
+                      </div>
+                    );
+                  })}
+                  <button onClick={() => addComplexItem('habilidades')} className="inline-flex items-center gap-2 rounded-2xl border border-zinc-700 px-3 py-2 text-sm font-semibold hover:border-zinc-500">
                     <Plus className="h-4 w-4" /> Adicionar habilidade
                   </button>
                 </div>
-                <TextBlock label="Descrição detalhada das habilidades" value={data.habilidadesNotas} onChange={(e) => handleChange('habilidadesNotas', e.target.value)} rows={14} />
+                
+                <div className="mt-8">
+                  <TextBlock label="Anotações gerais de habilidades (Opcional)" value={data.habilidadesNotas} onChange={(e) => handleChange('habilidadesNotas', e.target.value)} rows={6} />
+                </div>
               </>
             )}
 
@@ -870,7 +890,7 @@ export default function App() {
               <>
                 <SectionTitle>Rituais</SectionTitle>
                 <div className="space-y-4">
-                  {data.rituais.map((item, index) => {
+                  {(data.rituais || []).map((item, index) => {
                     const ritual = typeof item === 'string' ? { nome: item, descricao: '' } : item;
                     return (
                       <div key={index} className="flex flex-col gap-2 rounded-2xl border border-zinc-800 p-3">
@@ -878,7 +898,7 @@ export default function App() {
                           <input 
                             className={inputStyle} 
                             value={ritual.nome} 
-                            onChange={(e) => handleRitualChange(index, 'nome', e.target.value)} 
+                            onChange={(e) => handleComplexItemChange('rituais', index, 'nome', e.target.value)} 
                             placeholder={`Nome do Ritual ${index + 1}`} 
                           />
                           <button onClick={() => removeListItem('rituais', index)} className="rounded-2xl border border-zinc-800 px-3 hover:border-zinc-500">
@@ -888,14 +908,14 @@ export default function App() {
                         <textarea 
                           className={textareaStyle} 
                           value={ritual.descricao} 
-                          onChange={(e) => handleRitualChange(index, 'descricao', e.target.value)} 
+                          onChange={(e) => handleComplexItemChange('rituais', index, 'descricao', e.target.value)} 
                           placeholder="Descrição do ritual..." 
                           rows={3} 
                         />
                       </div>
                     );
                   })}
-                  <button onClick={addRitual} className="inline-flex items-center gap-2 rounded-2xl border border-zinc-700 px-3 py-2 text-sm font-semibold hover:border-zinc-500">
+                  <button onClick={() => addComplexItem('rituais')} className="inline-flex items-center gap-2 rounded-2xl border border-zinc-700 px-3 py-2 text-sm font-semibold hover:border-zinc-500">
                     <Plus className="h-4 w-4" /> Adicionar ritual
                   </button>
                 </div>
@@ -905,30 +925,50 @@ export default function App() {
             {formTab === 'informacoes' && (
               <>
                 <SectionTitle>Itens</SectionTitle>
-                <div className="space-y-3">
-                  {data.itens.map((item, index) => (
-                    <div key={index} className="flex gap-2">
-                      <input className={inputStyle} value={item} onChange={(e) => handleListChange('itens', index, e.target.value)} placeholder={`Item ${index + 1}`} />
-                      <button onClick={() => removeListItem('itens', index)} className="rounded-2xl border border-zinc-800 px-3 hover:border-zinc-500">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                  <button onClick={() => addListItem('itens')} className="inline-flex items-center gap-2 rounded-2xl border border-zinc-700 px-3 py-2 text-sm font-semibold hover:border-zinc-500">
+                <div className="space-y-4">
+                  {(data.itens || []).map((item, index) => {
+                    const objItem = typeof item === 'string' ? { nome: item, descricao: '' } : item;
+                    return (
+                      <div key={index} className="flex flex-col gap-2 rounded-2xl border border-zinc-800 p-3">
+                        <div className="flex gap-2">
+                          <input 
+                            className={inputStyle} 
+                            value={objItem.nome} 
+                            onChange={(e) => handleComplexItemChange('itens', index, 'nome', e.target.value)} 
+                            placeholder={`Nome do Item ${index + 1}`} 
+                          />
+                          <button onClick={() => removeListItem('itens', index)} className="rounded-2xl border border-zinc-800 px-3 hover:border-zinc-500">
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <textarea 
+                          className={textareaStyle} 
+                          value={objItem.descricao} 
+                          onChange={(e) => handleComplexItemChange('itens', index, 'descricao', e.target.value)} 
+                          placeholder="Descrição do item..." 
+                          rows={3} 
+                        />
+                      </div>
+                    );
+                  })}
+                  <button onClick={() => addComplexItem('itens')} className="inline-flex items-center gap-2 rounded-2xl border border-zinc-700 px-3 py-2 text-sm font-semibold hover:border-zinc-500">
                     <Plus className="h-4 w-4" /> Adicionar item
                   </button>
                 </div>
-                <TextBlock label="Detalhes de itens" value={data.itensNotas} onChange={(e) => handleChange('itensNotas', e.target.value)} rows={8} />
-                <TextBlock label="Aparência" value={data.aparencia} onChange={(e) => handleChange('aparencia', e.target.value)} rows={6} />
-                <TextBlock label="História" value={data.historia} onChange={(e) => handleChange('historia', e.target.value)} rows={10} />
-                <TextBlock label="Anotações gerais" value={data.anotacoesGerais} onChange={(e) => handleChange('anotacoesGerais', e.target.value)} rows={8} />
-                <TextBlock label="Informações gerais extras" value={data.informacoesGerais} onChange={(e) => handleChange('informacoesGerais', e.target.value)} rows={8} />
+
+                <div className="mt-8 space-y-6">
+                  <TextBlock label="Anotações gerais de itens (Opcional)" value={data.itensNotas} onChange={(e) => handleChange('itensNotas', e.target.value)} rows={4} />
+                  <TextBlock label="Aparência" value={data.aparencia} onChange={(e) => handleChange('aparencia', e.target.value)} rows={6} />
+                  <TextBlock label="História" value={data.historia} onChange={(e) => handleChange('historia', e.target.value)} rows={10} />
+                  <TextBlock label="Anotações gerais" value={data.anotacoesGerais} onChange={(e) => handleChange('anotacoesGerais', e.target.value)} rows={8} />
+                  <TextBlock label="Informações extras" value={data.informacoesGerais} onChange={(e) => handleChange('informacoesGerais', e.target.value)} rows={8} />
+                </div>
               </>
             )}
           </div>
         </aside>
 
-        {/* VISUALIZAÇÃO PDF - ISOLADA DO LAYOUT PARA EVITAR CONFLITOS VISUAIS DE TELA E NO CANVA */}
+        {/* VISUALIZAÇÃO PDF - ESTRUTURA BLINDADA PARA O HTML2CANVAS */}
         <main className="min-w-0 flex-1 overflow-auto pb-20">
           <div className="w-max mx-auto flex flex-col items-center gap-8 px-4">
 
@@ -939,38 +979,49 @@ export default function App() {
                   <div className="text-[200px] font-black tracking-[0.25em]">OP</div>
                 </div>
 
-                {/* Top Header - Altura Fixa (120px) */}
-                <div className="relative grid grid-cols-[1.3fr_0.85fr_1.15fr] gap-4 shrink-0 h-[120px]">
+                {/* HEADER FIXO - ZERO ELIPSES OU NOWRAP PARA EVITAR BUG DO HTML2CANVAS */}
+                <div className="relative flex gap-4 shrink-0 h-[140px] w-full">
                   
-                  {/* BOX 1 */}
-                  <div className="rounded-[18px] border-[3px] border-zinc-900 p-3 bg-white block overflow-hidden">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.22em]">Nome do NPC</div>
-                    <div className="mt-1 text-xl font-black leading-none uppercase whitespace-nowrap overflow-hidden text-ellipsis">{data.nome || 'Nome da criatura'}</div>
-                    <div className="mt-3 text-[11px] uppercase tracking-[0.18em] text-zinc-700 whitespace-nowrap overflow-hidden text-ellipsis"><span className="font-bold text-zinc-900">Origem:</span> {data.origem || '—'}</div>
-                    <div className="mt-1 text-[11px] uppercase tracking-[0.18em] text-zinc-700 whitespace-nowrap overflow-hidden text-ellipsis"><span className="font-bold text-zinc-900">Equipe:</span> {data.equipe || '—'}</div>
+                  {/* BOX 1: NOME, ORIGEM E EQUIPE */}
+                  <div className="rounded-[18px] border-[3px] border-zinc-900 bg-white flex flex-col p-3 w-[320px] overflow-hidden shrink-0">
+                    <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-900 mb-1">Nome do NPC</div>
+                    <div className="text-xl font-black leading-tight uppercase text-zinc-900 max-h-[46px] overflow-hidden break-words mb-2">
+                      {data.nome || 'Nome da criatura'}
+                    </div>
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-700 max-h-[16px] overflow-hidden break-words mb-1">
+                      <strong className="text-black font-bold">Origem:</strong> {data.origem || '—'}
+                    </div>
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-zinc-700 max-h-[16px] overflow-hidden break-words">
+                      <strong className="text-black font-bold">Equipe:</strong> {data.equipe || '—'}
+                    </div>
                   </div>
                   
-                  {/* BOX 2 */}
-                  <div className="rounded-[18px] border-[3px] border-zinc-900 p-3 bg-white block overflow-hidden">
-                    <div className="text-[10px] font-bold uppercase tracking-[0.22em]">Classe / Trilha</div>
-                    <div className="mt-1 h-[34px] text-base font-black leading-tight uppercase overflow-hidden">{resumoTopo}</div>
-                    <div className="mt-2 text-[10px] font-bold uppercase tracking-[0.22em]">NEX</div>
-                    <div className="mt-1 text-xl font-black leading-none">{data.nex || '0'}%</div>
+                  {/* BOX 2: CLASSE/TRILHA E NEX */}
+                  <div className="rounded-[18px] border-[3px] border-zinc-900 bg-white flex flex-col p-3 w-[220px] overflow-hidden shrink-0">
+                    <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-900 mb-1">Classe / Trilha</div>
+                    <div className="text-base font-black leading-tight uppercase text-zinc-900 max-h-[40px] overflow-hidden break-words mb-2">
+                      {resumoTopo}
+                    </div>
+                    <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-900 mb-1">NEX</div>
+                    <div className="text-xl font-black leading-none text-zinc-900 overflow-hidden">
+                      {data.nex || '0'}%
+                    </div>
                   </div>
                   
-                  {/* BOX 3 */}
-                  <div className="flex flex-col items-end justify-center pt-1 text-right">
-                    <div className="text-5xl font-black uppercase leading-none tracking-tight">Ordem</div>
-                    <div className="-mt-1 text-5xl font-black uppercase leading-none tracking-tight">Paranormal</div>
-                    <div className="mt-2 text-xl font-black uppercase tracking-[0.22em]">Ficha NPC</div>
+                  {/* BOX 3: LOGO DA ORDEM */}
+                  <div className="flex flex-col items-end justify-center text-right flex-1 overflow-hidden">
+                    <div className="text-5xl font-black uppercase leading-none tracking-tight text-zinc-900">Ordem</div>
+                    <div className="-mt-1 text-5xl font-black uppercase leading-none tracking-tight text-zinc-900">Paranormal</div>
+                    <div className="mt-2 text-xl font-black uppercase tracking-[0.22em] text-zinc-900">Ficha NPC</div>
                   </div>
+
                 </div>
 
-                {/* 3 Colunas Principais - Altura Fixa (620px) garantida */}
-                <div className="relative mt-4 grid grid-cols-[1.1fr_1.1fr_1fr] gap-4 shrink-0 h-[620px]">
+                {/* 3 Colunas Principais - Altura Fixa (600px) garantida */}
+                <div className="relative mt-4 flex gap-4 shrink-0 h-[600px] w-full">
                   
                   {/* Coluna 1 */}
-                  <div className="flex flex-col gap-4 h-full">
+                  <div className="flex flex-col gap-4 h-full w-[250px] shrink-0">
                     <LineBox title="Elementos" className="shrink-0">
                       <div className="space-y-2 text-[12px]">
                         <div className="border-b border-zinc-300 pb-1"><strong>Principal:</strong> {data.elementoPrincipal || '—'}</div>
@@ -991,15 +1042,15 @@ export default function App() {
                         <div className="flex items-center justify-between border-b border-zinc-300 pb-1"><span>Vontade</span><span className="font-bold">{data.vontade || '—'}</span></div>
                       </div>
                     </LineBox>
-                    <div className="grid grid-cols-3 gap-2 shrink-0">
-                      <LineBox title="PV" className="px-1"><div className="flex h-[50px] items-center justify-center text-xl font-black">{data.pv || '0'}</div></LineBox>
-                      <LineBox title="PE" className="px-1"><div className="flex h-[50px] items-center justify-center text-xl font-black">{data.pe || '0'}</div></LineBox>
-                      <LineBox title="SAN" className="px-1"><div className="flex h-[50px] items-center justify-center text-xl font-black">{data.sanidade || '0'}</div></LineBox>
+                    <div className="flex gap-2 shrink-0">
+                      <LineBox title="PV" className="flex-1 px-1"><div className="flex h-[40px] items-center justify-center text-xl font-black">{data.pv || '0'}</div></LineBox>
+                      <LineBox title="PE" className="flex-1 px-1"><div className="flex h-[40px] items-center justify-center text-xl font-black">{data.pe || '0'}</div></LineBox>
+                      <LineBox title="SAN" className="flex-1 px-1"><div className="flex h-[40px] items-center justify-center text-xl font-black">{data.sanidade || '0'}</div></LineBox>
                     </div>
                   </div>
 
                   {/* Coluna 2 */}
-                  <div className="flex flex-col gap-4 h-full">
+                  <div className="flex flex-col gap-4 h-full w-[250px] shrink-0">
                     <LineBox title="Atributos" className="shrink-0">
                       <div className="flex justify-between px-1 py-1">
                         <HexStat label="AGI" value={data.agi} />
@@ -1015,7 +1066,7 @@ export default function App() {
                   </div>
 
                   {/* Coluna 3 */}
-                  <div className="flex flex-col gap-4 h-full">
+                  <div className="flex flex-col gap-4 h-full flex-1 min-w-0">
                     <LineBox title="Imagem" className="h-[240px] shrink-0">
                       <div className="h-full w-full overflow-hidden rounded-[12px] border border-zinc-300 bg-zinc-100 flex items-center justify-center relative">
                         {data.imagem ? <img src={data.imagem} alt="NPC" className="absolute inset-0 w-full h-full object-cover" /> : <span className="text-[10px] uppercase tracking-widest text-zinc-400">Sem Imagem</span>}
@@ -1033,8 +1084,8 @@ export default function App() {
 
                 </div>
 
-                {/* Bottom - Ataques (Altura Fixa: 310px - Sobra exata da folha) */}
-                <div className="relative mt-auto pt-4 shrink-0 h-[310px]">
+                {/* Bottom - Ataques (Altura Fixa: 320px) */}
+                <div className="relative mt-auto pt-4 shrink-0 h-[320px] w-full">
                   <LineBox title="Ataques" className="h-full">
                     <div className="grid grid-cols-[2fr_1fr_1fr_2fr] gap-2 border-b-2 border-zinc-900 pb-2 text-[10px] font-bold uppercase tracking-[0.18em]">
                       <div>Ataque</div><div>Teste</div><div>Dano</div><div>Crítico / Especial</div>
@@ -1063,12 +1114,16 @@ export default function App() {
             {/* PÁGINA 2: HABILIDADES */}
             <section ref={pdfPageHabilidadesRef} className="h-[1123px] w-[794px] shrink-0 bg-[#f7f7f5] p-8 shadow-2xl overflow-hidden relative text-zinc-900 font-sans">
               <div className="flex h-full flex-col gap-4 border-[3px] border-zinc-900 p-6">
-                <LineBox title="Habilidades (Resumo)" className="flex-none">
-                  <RowList items={data.habilidades} />
+                <LineBox title="Habilidades" className="flex-1">
+                  <ComplexList items={data.habilidades || []} emptyText="Nenhuma habilidade adicionada." />
                 </LineBox>
-                <LineBox title="Descrição das Habilidades" className="flex-1">
-                  <div className="text-[12px] leading-relaxed whitespace-pre-wrap">{data.habilidadesNotas || '—'}</div>
-                </LineBox>
+                
+                {data.habilidadesNotas && (
+                  <LineBox title="Anotações de Habilidades" className="shrink-0 max-h-[250px]">
+                    <div className="text-[12px] leading-relaxed whitespace-pre-wrap">{data.habilidadesNotas}</div>
+                  </LineBox>
+                )}
+                
                 <LineBox title="Aparência" className="h-[250px] shrink-0">
                   <div className="text-[12px] leading-relaxed whitespace-pre-wrap">{data.aparencia || '—'}</div>
                 </LineBox>
@@ -1079,19 +1134,7 @@ export default function App() {
             <section ref={pdfPageRituaisRef} className="h-[1123px] w-[794px] shrink-0 bg-[#f7f7f5] p-8 shadow-2xl overflow-hidden relative text-zinc-900 font-sans">
               <div className="flex h-full flex-col gap-4 border-[3px] border-zinc-900 p-6">
                 <LineBox title="Rituais" className="flex-1">
-                  <div className="space-y-4 text-[12px] leading-relaxed">
-                    {data.rituais.length === 0 ? '—' : data.rituais.map((item, i) => {
-                      const ritual = typeof item === 'string' ? { nome: item, descricao: '' } : item;
-                      if (!ritual.nome.trim()) return null;
-                      return (
-                        <div key={i} className="border-b border-zinc-300 pb-3 last:border-0">
-                          <div className="font-bold text-[13px] uppercase tracking-wider">{ritual.nome}</div>
-                          {ritual.descricao && <div className="mt-1 whitespace-pre-wrap">{ritual.descricao}</div>}
-                        </div>
-                      );
-                    })}
-                    {data.rituais.every(r => !(typeof r === 'string' ? r : r.nome).trim()) && 'Nenhum ritual adicionado.'}
-                  </div>
+                  <ComplexList items={data.rituais || []} emptyText="Nenhum ritual adicionado." />
                 </LineBox>
                 <LineBox title="História" className="h-[400px] shrink-0">
                   <div className="text-[12px] leading-relaxed whitespace-pre-wrap">{data.historia || '—'}</div>
@@ -1099,23 +1142,29 @@ export default function App() {
               </div>
             </section>
 
-            {/* PÁGINA 4: INFORMAÇÕES */}
+            {/* PÁGINA 4: INFORMAÇÕES (AGORA COM LISTA COMPLEXA DE ITENS) */}
             <section ref={pdfPageInformacoesRef} className="h-[1123px] w-[794px] shrink-0 bg-[#f7f7f5] p-8 shadow-2xl overflow-hidden relative text-zinc-900 font-sans">
               <div className="flex h-full flex-col gap-4 border-[3px] border-zinc-900 p-6">
-                <div className="grid grid-cols-2 gap-4 flex-none">
-                  <LineBox title="Itens">
-                    <RowList items={data.itens} />
+                
+                <LineBox title="Itens" className="flex-1">
+                  <ComplexList items={data.itens || []} emptyText="Nenhum item adicionado." />
+                </LineBox>
+                
+                {data.itensNotas && (
+                  <LineBox title="Anotações de Itens" className="shrink-0 max-h-[200px]">
+                    <div className="text-[12px] leading-relaxed whitespace-pre-wrap">{data.itensNotas}</div>
                   </LineBox>
-                  <LineBox title="Detalhes dos Itens">
-                    <div className="text-[12px] leading-relaxed whitespace-pre-wrap">{data.itensNotas || '—'}</div>
+                )}
+
+                <div className="grid grid-cols-2 gap-4 shrink-0 h-[300px]">
+                  <LineBox title="Anotações Gerais">
+                    <div className="text-[12px] leading-relaxed whitespace-pre-wrap">{data.anotacoesGerais || '—'}</div>
+                  </LineBox>
+                  <LineBox title="Informações Extras">
+                    <div className="text-[12px] leading-relaxed whitespace-pre-wrap">{data.informacoesGerais || '—'}</div>
                   </LineBox>
                 </div>
-                <LineBox title="Anotações Gerais" className="flex-1">
-                  <div className="text-[12px] leading-relaxed whitespace-pre-wrap">{data.anotacoesGerais || '—'}</div>
-                </LineBox>
-                <LineBox title="Informações Extras" className="flex-1">
-                  <div className="text-[12px] leading-relaxed whitespace-pre-wrap">{data.informacoesGerais || '—'}</div>
-                </LineBox>
+
               </div>
             </section>
 
