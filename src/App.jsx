@@ -16,7 +16,6 @@ import {
   Brain,
   Zap,
   ChevronRight,
-  Users,
   Check,
 } from 'lucide-react';
 
@@ -66,7 +65,7 @@ const createEmptyNpc = () => ({
   ],
   habilidades: [''],
   itens: [''],
-  rituais: [''],
+  rituais: [{ nome: '', descricao: '' }],
   agi: 0,
   forca: 0,
   int: 0,
@@ -112,14 +111,14 @@ function TextBlock({ label, value, onChange, placeholder = '', rows = 5 }) {
 function HexStat({ label, value }) {
   const display = Number(value) || 0;
   return (
-    <div className="flex flex-col items-center gap-2">
-      <div className="text-[11px] font-bold uppercase tracking-[0.28em] text-zinc-800">{label}</div>
-      <div className="relative h-14 w-14">
+    <div className="flex flex-col items-center gap-1">
+      <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-800">{label}</div>
+      <div className="relative h-12 w-12">
         <div
           className="absolute inset-0 border-2 border-zinc-900 bg-white"
           style={{ clipPath: 'polygon(25% 6%, 75% 6%, 96% 50%, 75% 94%, 25% 94%, 4% 50%)' }}
         />
-        <div className="absolute inset-0 flex items-center justify-center text-lg font-black text-zinc-900">{display}</div>
+        <div className="absolute inset-0 flex items-center justify-center text-base font-black text-zinc-900">{display}</div>
       </div>
     </div>
   );
@@ -127,24 +126,9 @@ function HexStat({ label, value }) {
 
 function LineBox({ title, children, className = '' }) {
   return (
-    <div className={`rounded-[20px] border-2 border-zinc-900 bg-white p-3 ${className}`}>
-      <div className="mb-2 inline-block bg-black px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-white">{title}</div>
-      {children}
-    </div>
-  );
-}
-
-function LinedText({ text, minLines = 4 }) {
-  const lines = String(text || '').split('\n');
-  const padded = [...lines];
-  while (padded.length < minLines) padded.push('');
-  return (
-    <div className="space-y-1 text-[11px] leading-5 text-zinc-900">
-      {padded.map((line, index) => (
-        <div key={index} className="min-h-[20px] border-b border-zinc-300">
-          {line || <span>&nbsp;</span>}
-        </div>
-      ))}
+    <div className={`rounded-[20px] border-2 border-zinc-900 bg-white p-3 flex flex-col ${className}`}>
+      <div className="mb-2 self-start bg-black px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-white rounded-md shrink-0">{title}</div>
+      <div className="flex-1 w-full overflow-hidden">{children}</div>
     </div>
   );
 }
@@ -153,10 +137,10 @@ function RowList({ items, emptyText = '—' }) {
   const valid = items.filter((item) => item.trim());
   const list = valid.length ? valid : [emptyText];
   return (
-    <div className="space-y-1 text-[11px] leading-5 text-zinc-900">
+    <div className="space-y-1 text-[12px] leading-relaxed text-zinc-900">
       {list.map((item, index) => (
-        <div key={index} className="min-h-[20px] border-b border-zinc-300">
-          {item}
+        <div key={index} className="min-h-[24px] border-b border-zinc-300 pb-1">
+          • {item}
         </div>
       ))}
     </div>
@@ -198,7 +182,7 @@ function NpcCard({ npc, isActive, onSelect, onAdjust }) {
       }`}
     >
       <div className="flex items-start gap-3">
-        <div className="h-16 w-16 overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-950">
+        <div className="h-16 w-16 overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-950 shrink-0">
           {npc.imagem ? (
             <img
               src={npc.imagem}
@@ -206,8 +190,8 @@ function NpcCard({ npc, isActive, onSelect, onAdjust }) {
               className="h-full w-full object-cover"
             />
           ) : (
-            <div className="flex h-full items-center justify-center text-[10px] uppercase tracking-[0.24em] text-zinc-500">
-              Sem imagem
+            <div className="flex h-full items-center justify-center text-[10px] uppercase tracking-[0.24em] text-zinc-500 text-center leading-tight">
+              Sem<br/>imagem
             </div>
           )}
         </div>
@@ -217,14 +201,14 @@ function NpcCard({ npc, isActive, onSelect, onAdjust }) {
             <div className="truncate text-lg font-black text-white">
               {npc.nome || 'NPC sem nome'}
             </div>
-            <ChevronRight className="h-4 w-4 text-zinc-500" />
+            <ChevronRight className="h-4 w-4 text-zinc-500 shrink-0" />
           </div>
 
-          <div className="mt-1 text-xs uppercase tracking-[0.24em] text-zinc-400">
+          <div className="mt-1 text-xs uppercase tracking-[0.24em] text-zinc-400 truncate">
             {npc.classe || 'Classe'} • {npc.trilha || 'Trilha'} • {npc.nex || '0'}%
           </div>
 
-          <div className="mt-2 text-xs text-zinc-500">
+          <div className="mt-2 text-xs text-zinc-500 truncate">
             {npc.equipe || 'Sem equipe'} • {npc.elementoPrincipal || 'Sem elemento principal'}
           </div>
         </div>
@@ -370,15 +354,11 @@ export default function App() {
   });
   const [savedMessage, setSavedMessage] = useState('');
   const [formTab, setFormTab] = useState('gerais');
-  const pdfPageGeneralRef = useRef(null);
+  
+  const previewPageGeneralRef = useRef(null);
   const pdfPageHabilidadesRef = useRef(null);
   const pdfPageRituaisRef = useRef(null);
   const pdfPageInformacoesRef = useRef(null);
-
-  const previewPageGeneralRef = useRef(null);
-  const previewPageHabilidadesRef = useRef(null);
-  const previewPageRituaisRef = useRef(null);
-  const previewPageInformacoesRef = useRef(null);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(npcs));
@@ -433,6 +413,26 @@ export default function App() {
 
   const removeListItem = (field, index) => {
     updateNpc((npc) => ({ ...npc, [field]: npc[field].filter((_, i) => i !== index) }));
+  };
+
+  const handleRitualChange = (index, field, value) => {
+    updateNpc((npc) => {
+      const novosRituais = npc.rituais.map((r, i) => {
+        if (i !== index) {
+          return typeof r === 'string' ? { nome: r, descricao: '' } : r;
+        }
+        const current = typeof r === 'string' ? { nome: r, descricao: '' } : r;
+        return { ...current, [field]: value };
+      });
+      return { ...npc, rituais: novosRituais };
+    });
+  };
+
+  const addRitual = () => {
+    updateNpc((npc) => ({
+      ...npc,
+      rituais: [...npc.rituais, { nome: '', descricao: '' }]
+    }));
   };
 
   const saveAll = () => {
@@ -496,140 +496,159 @@ export default function App() {
 
   const [isExporting, setIsExporting] = useState(false);
 
-const waitForImages = async (element) => {
-  const images = Array.from(element.querySelectorAll('img'));
+  const waitForImages = async (element) => {
+    const images = Array.from(element.querySelectorAll('img'));
+    await Promise.all(
+      images.map(
+        (img) =>
+          new Promise((resolve) => {
+            if (img.complete) {
+              resolve();
+              return;
+            }
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+          })
+      )
+    );
+  };
 
-  await Promise.all(
-    images.map(
-      (img) =>
-        new Promise((resolve) => {
-          if (img.complete) {
-            resolve();
-            return;
-          }
+  const normalizePdfColors = (doc) => {
+    const elements = Array.from(doc.querySelectorAll('*'));
+    
+    elements.forEach((el) => {
+      const style = window.getComputedStyle(el);
+      
+      const resolveColor = (prop, fallback) => {
+        const value = style[prop];
+        if (!value || !value.includes('oklch')) return value;
+        
+        const classes = el.className;
+        if (typeof classes !== 'string') return fallback;
 
-          img.onload = () => resolve();
-          img.onerror = () => resolve();
-        })
-    )
-  );
-};
+        if (prop === 'backgroundColor') {
+          if (classes.includes('bg-white')) return '#ffffff';
+          if (classes.includes('bg-black')) return '#000000';
+          if (classes.includes('bg-zinc-100')) return '#f4f4f5';
+          if (classes.includes('bg-[#f7f7f5]')) return '#f7f7f5';
+          return 'transparent';
+        }
+        if (prop === 'color') {
+          if (classes.includes('text-white')) return '#ffffff';
+          if (classes.includes('text-zinc-400')) return '#a1a1aa';
+          if (classes.includes('text-zinc-500')) return '#71717a';
+          if (classes.includes('text-zinc-700')) return '#3f3f46';
+          if (classes.includes('text-zinc-900')) return '#18181b';
+          return '#18181b';
+        }
+        if (prop.includes('Color')) { 
+          if (classes.includes('border-zinc-300')) return '#d4d4d8';
+          if (classes.includes('border-zinc-900')) return '#18181b';
+          if (classes.includes('border-white')) return '#ffffff';
+          return 'transparent';
+        }
+        return fallback;
+      };
 
-const normalizePdfColors = (doc) => {
-  const elements = doc.querySelectorAll('*');
-
-  elements.forEach((el) => {
-    const computed = window.getComputedStyle(el);
-
-    const forceSafeColor = (value, fallback) => {
-      if (!value) return fallback;
-      if (value.includes('oklch(')) return fallback;
-      return value;
-    };
-
-    el.style.color = forceSafeColor(computed.color, '#111111');
-    el.style.backgroundColor = forceSafeColor(computed.backgroundColor, 'transparent');
-    el.style.borderColor = forceSafeColor(computed.borderColor, '#111111');
-    el.style.outlineColor = forceSafeColor(computed.outlineColor, '#111111');
-    el.style.boxShadow = 'none';
-    el.style.textShadow = 'none';
-  });
-};
-
-const exportPdf = async () => {
-  if (isExporting) return;
-
-  setIsExporting(true);
-
-  try {
-    if (document.fonts?.ready) {
-      await document.fonts.ready;
-    }
-
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'pt',
-      format: 'a4',
-      compress: true,
-      hotfixes: ['px_scaling'],
+      el.style.backgroundColor = resolveColor('backgroundColor', 'transparent');
+      el.style.color = resolveColor('color', '#18181b');
+      el.style.borderColor = resolveColor('borderColor', 'transparent');
+      el.style.borderTopColor = resolveColor('borderTopColor', 'transparent');
+      el.style.borderRightColor = resolveColor('borderRightColor', 'transparent');
+      el.style.borderBottomColor = resolveColor('borderBottomColor', 'transparent');
+      el.style.borderLeftColor = resolveColor('borderLeftColor', 'transparent');
+      el.style.outlineColor = resolveColor('outlineColor', 'transparent');
+      el.style.boxShadow = 'none';
+      el.style.textShadow = 'none';
     });
+  };
 
-    const pages = [
-    pdfPageGeneralRef.current,
-    pdfPageHabilidadesRef.current,
-    pdfPageRituaisRef.current,
-    pdfPageInformacoesRef.current,
-    ].filter(Boolean);
+  const exportPdf = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
 
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-    const margin = 18;
-    const availableWidth = pageWidth - margin * 2;
-    const availableHeight = pageHeight - margin * 2;
-
-    for (let index = 0; index < pages.length; index += 1) {
-      const page = pages[index];
-      await waitForImages(page);
-
-      const canvas = await html2canvas(page, {
-        scale: Math.min(2, Math.max(1.5, window.devicePixelRatio || 1)),
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#f7f7f5',
-        logging: false,
-        scrollX: 0,
-        scrollY: -window.scrollY,
-        width: page.scrollWidth,
-        height: page.scrollHeight,
-        windowWidth: page.scrollWidth,
-        windowHeight: page.scrollHeight,
-        onclone: (clonedDoc) => {
-          normalizePdfColors(clonedDoc);
-        },
-      });
-
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
-
-      const ratio = Math.min(
-        availableWidth / canvas.width,
-        availableHeight / canvas.height
-      );
-
-      const renderWidth = canvas.width * ratio;
-      const renderHeight = canvas.height * ratio;
-      const x = (pageWidth - renderWidth) / 2;
-      const y = (pageHeight - renderHeight) / 2;
-
-      if (index > 0) {
-        pdf.addPage();
+    try {
+      if (document.fonts?.ready) {
+        await document.fonts.ready;
       }
 
-      pdf.addImage(
-        imgData,
-        'JPEG',
-        x,
-        y,
-        renderWidth,
-        renderHeight,
-        undefined,
-        'FAST'
-      );
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'pt',
+        format: 'a4',
+        compress: true,
+        hotfixes: ['px_scaling'],
+      });
+
+      const pages = [
+        previewPageGeneralRef.current,
+        pdfPageHabilidadesRef.current,
+        pdfPageRituaisRef.current,
+        pdfPageInformacoesRef.current,
+      ].filter(Boolean);
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      for (let index = 0; index < pages.length; index += 1) {
+        const page = pages[index];
+        await waitForImages(page);
+
+        const canvas = await html2canvas(page, {
+          scale: 2, 
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#f7f7f5',
+          logging: false,
+          scrollX: 0,
+          scrollY: -window.scrollY,
+          onclone: (clonedDoc) => {
+            normalizePdfColors(clonedDoc);
+          },
+        });
+
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+        const ratio = Math.min(
+          pageWidth / canvas.width,
+          pageHeight / canvas.height
+        );
+
+        const renderWidth = canvas.width * ratio;
+        const renderHeight = canvas.height * ratio;
+        const x = (pageWidth - renderWidth) / 2;
+        const y = (pageHeight - renderHeight) / 2;
+
+        if (index > 0) {
+          pdf.addPage();
+        }
+
+        pdf.addImage(
+          imgData,
+          'JPEG',
+          x,
+          y,
+          renderWidth,
+          renderHeight,
+          undefined,
+          'FAST'
+        );
+      }
+
+      const safeName = (data?.nome || 'npc')
+        .trim()
+        .replace(/\s+/g, '-')
+        .toLowerCase();
+
+      pdf.save(`ficha-${safeName}.pdf`);
+    } catch (error) {
+      console.error('Erro ao exportar PDF:', error);
+      setSavedMessage('Erro ao exportar PDF. Veja o console.');
+      setTimeout(() => setSavedMessage(''), 4000);
+    } finally {
+      setIsExporting(false);
     }
-
-    const safeName = (data?.nome || 'npc')
-      .trim()
-      .replace(/\s+/g, '-')
-      .toLowerCase();
-
-    pdf.save(`ficha-${safeName}.pdf`);
-  } catch (error) {
-    console.error('Erro ao exportar PDF:', error);
-    setSavedMessage('Erro ao exportar PDF. Veja o console do navegador.');
-    setTimeout(() => setSavedMessage(''), 4000);
-  } finally {
-    setIsExporting(false);
-  }
-};
+  };
 
   const resumoTopo = useMemo(() => {
     const parts = [data?.classe, data?.trilha].filter(Boolean);
@@ -648,19 +667,19 @@ const exportPdf = async () => {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
       <div className="mx-auto grid min-h-screen max-w-[1750px] grid-cols-1 gap-6 p-4 xl:grid-cols-[340px_520px_minmax(0,1fr)] xl:p-6">
-        <aside className="rounded-[28px] border border-zinc-800 bg-zinc-900/70 p-5 shadow-2xl backdrop-blur">
-          <div className="mb-5 flex items-start justify-between gap-4">
-            <div>
-              <div className="mb-2 flex items-center gap-2 text-zinc-300">
-                <Sparkles className="h-4 w-4" />
-                <span className="text-xs uppercase tracking-[0.32em]">C.R.I.S. inspired</span>
-              </div>
-              <h1 className="text-2xl font-black tracking-tight">Banco de NPCs</h1>
-              <p className="mt-2 text-sm text-zinc-400">Salve, edite e acompanhe PV, PE e sanidade direto na plataforma.</p>
+        
+        {/* SIDEBAR DE ARQUIVOS */}
+        <aside className="rounded-[28px] border border-zinc-800 bg-zinc-900/70 p-5 shadow-2xl backdrop-blur flex flex-col h-full max-h-[calc(100vh-48px)]">
+          <div className="mb-5 shrink-0">
+            <div className="mb-2 flex items-center gap-2 text-zinc-300">
+              <Sparkles className="h-4 w-4" />
+              <span className="text-xs uppercase tracking-[0.32em]">C.R.I.S. inspired</span>
             </div>
+            <h1 className="text-2xl font-black tracking-tight">Banco de NPCs</h1>
+            <p className="mt-2 text-sm text-zinc-400">Salve, edite e acompanhe PV, PE e sanidade direto na plataforma.</p>
           </div>
 
-          <div className="mb-4 grid grid-cols-2 gap-2">
+          <div className="mb-4 grid grid-cols-2 gap-2 shrink-0">
             <button onClick={createNpc} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-zinc-700 bg-zinc-950 px-4 py-2 text-sm font-semibold hover:border-zinc-500">
               <Plus className="h-4 w-4" /> Novo
             </button>
@@ -671,9 +690,9 @@ const exportPdf = async () => {
             <button onClick={deleteNpc} className="rounded-2xl border border-red-900/60 bg-red-950/30 px-4 py-2 text-sm font-semibold text-red-300 hover:border-red-700">Excluir</button>
           </div>
 
-          {savedMessage && <div className="mb-4 rounded-2xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-300">{savedMessage}</div>}
+          {savedMessage && <div className="mb-4 rounded-2xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-zinc-300 shrink-0">{savedMessage}</div>}
 
-          <div className="space-y-3 overflow-auto pr-1">
+          <div className="space-y-3 overflow-y-auto pr-1 flex-1">
             {npcs.map((npc) => (
               <NpcCard
                 key={npc.id}
@@ -686,8 +705,9 @@ const exportPdf = async () => {
           </div>
         </aside>
 
-        <aside className="rounded-[28px] border border-zinc-800 bg-zinc-900/70 p-5 shadow-2xl backdrop-blur">
-          <div className="mb-5 flex flex-wrap gap-3">
+        {/* EDITOR */}
+        <aside className="rounded-[28px] border border-zinc-800 bg-zinc-900/70 p-5 shadow-2xl backdrop-blur flex flex-col h-full max-h-[calc(100vh-48px)]">
+          <div className="mb-5 flex flex-wrap gap-3 shrink-0">
             <button
                 onClick={exportPdf}
                 disabled={isExporting}
@@ -702,13 +722,13 @@ const exportPdf = async () => {
             </label>
           </div>
 
-          <div className="mb-5 grid grid-cols-3 gap-3">
+          <div className="mb-5 grid grid-cols-3 gap-3 shrink-0">
             <StatQuickAdjust icon={Heart} label="PV" current={data.pvAtual} max={data.pv} onAdjust={(delta) => adjustStat('pvAtual', delta)} />
             <StatQuickAdjust icon={Zap} label="PE" current={data.peAtual} max={data.pe} onAdjust={(delta) => adjustStat('peAtual', delta)} />
             <StatQuickAdjust icon={Brain} label="Sanidade" current={data.sanidadeAtual} max={data.sanidade} onAdjust={(delta) => adjustStat('sanidadeAtual', delta)} />
           </div>
 
-          <div className="mb-4 flex flex-wrap gap-2">
+          <div className="mb-4 flex flex-wrap gap-2 shrink-0">
             {formTabs.map((tab) => {
               const Icon = tab.icon;
               const active = formTab === tab.id;
@@ -724,7 +744,7 @@ const exportPdf = async () => {
             })}
           </div>
 
-          <div className="max-h-[calc(100vh-250px)] space-y-6 overflow-auto pr-1">
+          <div className="space-y-6 overflow-y-auto pr-1 flex-1 pb-10">
             {formTab === 'gerais' && (
               <>
                 <div>
@@ -849,20 +869,36 @@ const exportPdf = async () => {
             {formTab === 'rituais' && (
               <>
                 <SectionTitle>Rituais</SectionTitle>
-                <div className="space-y-3">
-                  {data.rituais.map((item, index) => (
-                    <div key={index} className="flex gap-2">
-                      <input className={inputStyle} value={item} onChange={(e) => handleListChange('rituais', index, e.target.value)} placeholder={`Ritual ${index + 1}`} />
-                      <button onClick={() => removeListItem('rituais', index)} className="rounded-2xl border border-zinc-800 px-3 hover:border-zinc-500">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                  <button onClick={() => addListItem('rituais')} className="inline-flex items-center gap-2 rounded-2xl border border-zinc-700 px-3 py-2 text-sm font-semibold hover:border-zinc-500">
+                <div className="space-y-4">
+                  {data.rituais.map((item, index) => {
+                    const ritual = typeof item === 'string' ? { nome: item, descricao: '' } : item;
+                    return (
+                      <div key={index} className="flex flex-col gap-2 rounded-2xl border border-zinc-800 p-3">
+                        <div className="flex gap-2">
+                          <input 
+                            className={inputStyle} 
+                            value={ritual.nome} 
+                            onChange={(e) => handleRitualChange(index, 'nome', e.target.value)} 
+                            placeholder={`Nome do Ritual ${index + 1}`} 
+                          />
+                          <button onClick={() => removeListItem('rituais', index)} className="rounded-2xl border border-zinc-800 px-3 hover:border-zinc-500">
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <textarea 
+                          className={textareaStyle} 
+                          value={ritual.descricao} 
+                          onChange={(e) => handleRitualChange(index, 'descricao', e.target.value)} 
+                          placeholder="Descrição do ritual..." 
+                          rows={3} 
+                        />
+                      </div>
+                    );
+                  })}
+                  <button onClick={addRitual} className="inline-flex items-center gap-2 rounded-2xl border border-zinc-700 px-3 py-2 text-sm font-semibold hover:border-zinc-500">
                     <Plus className="h-4 w-4" /> Adicionar ritual
                   </button>
                 </div>
-                <TextBlock label="Descrição detalhada dos rituais" value={data.rituaisNotas} onChange={(e) => handleChange('rituaisNotas', e.target.value)} rows={14} />
               </>
             )}
 
@@ -892,28 +928,37 @@ const exportPdf = async () => {
           </div>
         </aside>
 
-        <main className="space-y-6 overflow-auto">
-          <div className="rounded-[28px] border border-zinc-800 bg-zinc-900/50 p-4 text-sm text-zinc-400">
-            A visualização voltou a ficar ao lado do preenchimento. O PDF agora é gerado em 4 páginas: geral, habilidades, rituais e informações/anotações. Os campos continuam visuais no PDF, mas ele ainda é exportado como páginas renderizadas, não como formulário editável nativo.
-          </div>
+        {/* VISUALIZAÇÃO PDF - ISOLADA DO LAYOUT PARA EVITAR CONFLITOS VISUAIS DE TELA E NO CANVA */}
+        <main className="min-w-0 flex-1 overflow-auto pb-20">
+          <div className="w-max mx-auto flex flex-col items-center gap-8 px-4">
 
-          <div className="flex flex-col items-center gap-6">
-            <section ref={previewPageGeneralRef} className="h-[1123px] w-[794px] ...">
-              <div className="relative flex h-full flex-col border-[3px] border-zinc-900 px-6 py-5 text-zinc-900">
-                <div className="absolute inset-0 opacity-[0.05]"><div className="flex h-full items-center justify-center text-[180px] font-black tracking-[0.25em]">OP</div></div>
-                <div className="relative grid grid-cols-[1.25fr_0.85fr_1.15fr] gap-4">
-                  <div className="rounded-[18px] border-[3px] border-zinc-900 p-3">
+            {/* PÁGINA 1: FICHA GERAL + ATAQUES */}
+            <section ref={previewPageGeneralRef} className="h-[1123px] w-[794px] shrink-0 bg-[#f7f7f5] shadow-2xl overflow-hidden relative text-zinc-900 font-sans">
+              <div className="flex h-full flex-col border-[3px] border-zinc-900 px-6 py-5">
+                <div className="absolute inset-0 opacity-[0.03] flex items-center justify-center pointer-events-none">
+                  <div className="text-[200px] font-black tracking-[0.25em]">OP</div>
+                </div>
+
+                {/* Top Header - Altura Fixa (120px) */}
+                <div className="relative grid grid-cols-[1.3fr_0.85fr_1.15fr] gap-4 shrink-0 h-[120px]">
+                  
+                  {/* BOX 1 */}
+                  <div className="rounded-[18px] border-[3px] border-zinc-900 p-3 bg-white block overflow-hidden">
                     <div className="text-[10px] font-bold uppercase tracking-[0.22em]">Nome do NPC</div>
-                    <div className="mt-3 text-2xl font-black leading-tight">{data.nome || 'Nome da criatura'}</div>
-                    <div className="mt-2 text-[11px] uppercase tracking-[0.18em] text-zinc-700">{data.origem || 'Origem'}</div>
-                    <div className="mt-2 text-[11px] uppercase tracking-[0.18em] text-zinc-700">Equipe: {data.equipe || '—'}</div>
+                    <div className="mt-1 text-xl font-black leading-none uppercase whitespace-nowrap overflow-hidden text-ellipsis">{data.nome || 'Nome da criatura'}</div>
+                    <div className="mt-3 text-[11px] uppercase tracking-[0.18em] text-zinc-700 whitespace-nowrap overflow-hidden text-ellipsis"><span className="font-bold text-zinc-900">Origem:</span> {data.origem || '—'}</div>
+                    <div className="mt-1 text-[11px] uppercase tracking-[0.18em] text-zinc-700 whitespace-nowrap overflow-hidden text-ellipsis"><span className="font-bold text-zinc-900">Equipe:</span> {data.equipe || '—'}</div>
                   </div>
-                  <div className="rounded-[18px] border-[3px] border-zinc-900 p-3">
+                  
+                  {/* BOX 2 */}
+                  <div className="rounded-[18px] border-[3px] border-zinc-900 p-3 bg-white block overflow-hidden">
                     <div className="text-[10px] font-bold uppercase tracking-[0.22em]">Classe / Trilha</div>
-                    <div className="mt-3 text-lg font-black leading-tight">{resumoTopo}</div>
-                    <div className="mt-4 text-[10px] font-bold uppercase tracking-[0.22em]">NEX</div>
-                    <div className="mt-1 text-2xl font-black">{data.nex || '0'}%</div>
+                    <div className="mt-1 h-[34px] text-base font-black leading-tight uppercase overflow-hidden">{resumoTopo}</div>
+                    <div className="mt-2 text-[10px] font-bold uppercase tracking-[0.22em]">NEX</div>
+                    <div className="mt-1 text-xl font-black leading-none">{data.nex || '0'}%</div>
                   </div>
+                  
+                  {/* BOX 3 */}
                   <div className="flex flex-col items-end justify-center pt-1 text-right">
                     <div className="text-5xl font-black uppercase leading-none tracking-tight">Ordem</div>
                     <div className="-mt-1 text-5xl font-black uppercase leading-none tracking-tight">Paranormal</div>
@@ -921,21 +966,24 @@ const exportPdf = async () => {
                   </div>
                 </div>
 
-                <div className="relative mt-4 grid grid-cols-[1.08fr_1.12fr_1.02fr] gap-4">
-                  <div className="space-y-3">
-                    <LineBox title="Elementos">
+                {/* 3 Colunas Principais - Altura Fixa (620px) garantida */}
+                <div className="relative mt-4 grid grid-cols-[1.1fr_1.1fr_1fr] gap-4 shrink-0 h-[620px]">
+                  
+                  {/* Coluna 1 */}
+                  <div className="flex flex-col gap-4 h-full">
+                    <LineBox title="Elementos" className="shrink-0">
                       <div className="space-y-2 text-[12px]">
                         <div className="border-b border-zinc-300 pb-1"><strong>Principal:</strong> {data.elementoPrincipal || '—'}</div>
-                        <div className="min-h-[56px] border-b border-zinc-300 pb-1"><strong>Secundários:</strong> {data.elementosSecundarios.length ? data.elementosSecundarios.join(', ') : '—'}</div>
+                        <div className="border-b border-zinc-300 pb-1"><strong>Secundários:</strong> {data.elementosSecundarios.length ? data.elementosSecundarios.join(', ') : '—'}</div>
                       </div>
                     </LineBox>
-                    <LineBox title="Sentidos">
+                    <LineBox title="Sentidos" className="shrink-0">
                       <div className="space-y-2 text-[12px]">
                         <div className="flex items-center justify-between border-b border-zinc-300 pb-1"><span>Percepção</span><span className="font-bold">{data.percepcao || '—'}</span></div>
                         <div className="flex items-center justify-between border-b border-zinc-300 pb-1"><span>Iniciativa</span><span className="font-bold">{data.iniciativa || '—'}</span></div>
                       </div>
                     </LineBox>
-                    <LineBox title="Defesa">
+                    <LineBox title="Defesa" className="shrink-0">
                       <div className="space-y-2 text-[12px]">
                         <div className="flex items-center justify-between border-b border-zinc-300 pb-1"><span>Defesa</span><span className="font-bold">{data.defesa || '—'}</span></div>
                         <div className="flex items-center justify-between border-b border-zinc-300 pb-1"><span>Fortitude</span><span className="font-bold">{data.fortitude || '—'}</span></div>
@@ -943,65 +991,134 @@ const exportPdf = async () => {
                         <div className="flex items-center justify-between border-b border-zinc-300 pb-1"><span>Vontade</span><span className="font-bold">{data.vontade || '—'}</span></div>
                       </div>
                     </LineBox>
-                    <div className="grid grid-cols-3 gap-2">
-                      <LineBox title="PV" className="min-h-[120px]"><div className="text-lg font-black">{data.pv || '—'}</div><div className="mt-4 text-[11px] uppercase tracking-[0.2em] text-zinc-700">Atual</div><div className="text-sm font-bold">{data.pvAtual || '—'}</div></LineBox>
-                      <LineBox title="PE" className="min-h-[120px]"><div className="text-lg font-black">{data.pe || '—'}</div><div className="mt-4 text-[11px] uppercase tracking-[0.2em] text-zinc-700">Atual</div><div className="text-sm font-bold">{data.peAtual || '—'}</div></LineBox>
-                      <LineBox title="Sanidade" className="min-h-[120px]"><div className="text-lg font-black">{data.sanidade || '—'}</div><div className="mt-4 text-[11px] uppercase tracking-[0.2em] text-zinc-700">Atual</div><div className="text-sm font-bold">{data.sanidadeAtual || '—'}</div></LineBox>
+                    <div className="grid grid-cols-3 gap-2 shrink-0">
+                      <LineBox title="PV" className="px-1"><div className="flex h-[50px] items-center justify-center text-xl font-black">{data.pv || '0'}</div></LineBox>
+                      <LineBox title="PE" className="px-1"><div className="flex h-[50px] items-center justify-center text-xl font-black">{data.pe || '0'}</div></LineBox>
+                      <LineBox title="SAN" className="px-1"><div className="flex h-[50px] items-center justify-center text-xl font-black">{data.sanidade || '0'}</div></LineBox>
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    <LineBox title="Atributos"><div className="grid grid-cols-5 gap-2 pt-2"><HexStat label="AGI" value={data.agi} /><HexStat label="FOR" value={data.forca} /><HexStat label="INT" value={data.int} /><HexStat label="PRE" value={data.pre} /><HexStat label="VIG" value={data.vig} /></div></LineBox>
-                    <LineBox title="Perícias" className="min-h-[222px]"><LinedText text={data.pericias} minLines={8} /></LineBox>
-                    <LineBox title="Defesas adicionais"><div className="space-y-2 text-[11px]"><div className="border-b border-zinc-300 pb-1">Resistências: {data.resistencias || '—'}</div><div className="border-b border-zinc-300 pb-1">Vulnerabilidades: {data.vulnerabilidades || '—'}</div><div className="border-b border-zinc-300 pb-1">Imunidades: {data.imunidades || '—'}</div><div className="border-b border-zinc-300 pb-1">Deslocamento: {data.deslocamento || '—'} metros</div></div></LineBox>
-                    <LineBox title="Imagem" className="min-h-[240px]"><div className="h-[190px] overflow-hidden rounded-[16px] border border-zinc-300 bg-zinc-100">{data.imagem ? <img src={data.imagem} alt={data.nome || 'NPC'} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-[11px] uppercase tracking-[0.22em] text-zinc-500">Sem imagem</div>}</div></LineBox>
-                  </div>
-
-                  <div className="space-y-3">
-                    <LineBox title="Informações gerais" className="h-[520px]">
-                      <LinedText text={`${data.informacoesGerais}\n\nItens: ${data.itens.filter(Boolean).join(', ')}\n\n${data.itensNotas}\n\nEquipe: ${data.equipe || '—'}`} minLines={22} />
+                  {/* Coluna 2 */}
+                  <div className="flex flex-col gap-4 h-full">
+                    <LineBox title="Atributos" className="shrink-0">
+                      <div className="flex justify-between px-1 py-1">
+                        <HexStat label="AGI" value={data.agi} />
+                        <HexStat label="FOR" value={data.forca} />
+                        <HexStat label="INT" value={data.int} />
+                        <HexStat label="PRE" value={data.pre} />
+                        <HexStat label="VIG" value={data.vig} />
+                      </div>
+                    </LineBox>
+                    <LineBox title="Perícias" className="flex-1">
+                      <div className="text-[11px] leading-relaxed whitespace-pre-wrap">{data.pericias || '—'}</div>
                     </LineBox>
                   </div>
+
+                  {/* Coluna 3 */}
+                  <div className="flex flex-col gap-4 h-full">
+                    <LineBox title="Imagem" className="h-[240px] shrink-0">
+                      <div className="h-full w-full overflow-hidden rounded-[12px] border border-zinc-300 bg-zinc-100 flex items-center justify-center relative">
+                        {data.imagem ? <img src={data.imagem} alt="NPC" className="absolute inset-0 w-full h-full object-cover" /> : <span className="text-[10px] uppercase tracking-widest text-zinc-400">Sem Imagem</span>}
+                      </div>
+                    </LineBox>
+                    <LineBox title="Defesas Adicionais" className="flex-1">
+                      <div className="space-y-3 text-[11px]">
+                        <div className="border-b border-zinc-300 pb-1">Resistências: {data.resistencias || '—'}</div>
+                        <div className="border-b border-zinc-300 pb-1">Vulnerabilidades: {data.vulnerabilidades || '—'}</div>
+                        <div className="border-b border-zinc-300 pb-1">Imunidades: {data.imunidades || '—'}</div>
+                        <div className="border-b border-zinc-300 pb-1">Deslocamento: {data.deslocamento || '—'}</div>
+                      </div>
+                    </LineBox>
+                  </div>
+
                 </div>
 
-                <div className="relative mt-4 pdf-no-flex-grow">
+                {/* Bottom - Ataques (Altura Fixa: 310px - Sobra exata da folha) */}
+                <div className="relative mt-auto pt-4 shrink-0 h-[310px]">
                   <LineBox title="Ataques" className="h-full">
-                    <div className="grid grid-cols-[2.1fr_1fr_1fr_1.6fr] gap-2 border-b-2 border-zinc-900 pb-2 text-[10px] font-bold uppercase tracking-[0.18em]"><div>Ataque</div><div>Teste</div><div>Dano</div><div>Crítico / Alcance / Especial</div></div>
-                    <div className="mt-2 space-y-2 text-[11px]">
-                      {data.ataques.map((ataque, index) => (
-                        <div key={index} className="grid min-h-[38px] grid-cols-[2.1fr_1fr_1fr_1.6fr] gap-2 border-b border-zinc-300 pb-2"><div>{ataque.nome || '—'}</div><div>{ataque.teste || '—'}</div><div>{ataque.dano || '—'}</div><div>{ataque.extra || '—'}</div></div>
-                      ))}
+                    <div className="grid grid-cols-[2fr_1fr_1fr_2fr] gap-2 border-b-2 border-zinc-900 pb-2 text-[10px] font-bold uppercase tracking-[0.18em]">
+                      <div>Ataque</div><div>Teste</div><div>Dano</div><div>Crítico / Especial</div>
+                    </div>
+                    <div className="mt-2 space-y-3 text-[11px]">
+                      {data.ataques.map((ataque, index) => {
+                        if(!ataque.nome && !ataque.teste && !ataque.dano && !ataque.extra) return null;
+                        return (
+                          <div key={index} className="grid grid-cols-[2fr_1fr_1fr_2fr] gap-2 border-b border-zinc-300 pb-2">
+                            <div className="font-bold break-words">{ataque.nome || '—'}</div>
+                            <div className="break-words">{ataque.teste || '—'}</div>
+                            <div className="break-words">{ataque.dano || '—'}</div>
+                            <div className="break-words">{ataque.extra || '—'}</div>
+                          </div>
+                        );
+                      })}
+                      {data.ataques.every(a => !a.nome && !a.teste && !a.dano && !a.extra) && (
+                        <div className="text-zinc-500 italic">Nenhum ataque registrado.</div>
+                      )}
                     </div>
                   </LineBox>
                 </div>
               </div>
             </section>
 
-            <section ref={pageHabilidadesRef} className="h-[1123px] w-[794px] overflow-hidden rounded-[18px] bg-[#f7f7f5] p-8 shadow-2xl">
-              <div className="grid h-full grid-rows-[auto_1fr_1fr] gap-4 border-[3px] border-zinc-900 p-6 text-zinc-900">
-                <LineBox title="Habilidades"><RowList items={data.habilidades} /><div className="mt-3 border-t-2 border-zinc-900 pt-3 text-[11px] leading-5">{data.habilidadesNotas || 'Sem descrição adicional'}</div></LineBox>
-                <LineBox title="Aparência"><LinedText text={data.aparencia} minLines={14} /></LineBox>
-                <LineBox title="Resumo do personagem"><LinedText text={`Nome: ${data.nome || '—'}\nClasse: ${data.classe || '—'}\nTrilha: ${data.trilha || '—'}\nEquipe: ${data.equipe || '—'}\nElemento principal: ${data.elementoPrincipal || '—'}`} minLines={10} /></LineBox>
+            {/* PÁGINA 2: HABILIDADES */}
+            <section ref={pdfPageHabilidadesRef} className="h-[1123px] w-[794px] shrink-0 bg-[#f7f7f5] p-8 shadow-2xl overflow-hidden relative text-zinc-900 font-sans">
+              <div className="flex h-full flex-col gap-4 border-[3px] border-zinc-900 p-6">
+                <LineBox title="Habilidades (Resumo)" className="flex-none">
+                  <RowList items={data.habilidades} />
+                </LineBox>
+                <LineBox title="Descrição das Habilidades" className="flex-1">
+                  <div className="text-[12px] leading-relaxed whitespace-pre-wrap">{data.habilidadesNotas || '—'}</div>
+                </LineBox>
+                <LineBox title="Aparência" className="h-[250px] shrink-0">
+                  <div className="text-[12px] leading-relaxed whitespace-pre-wrap">{data.aparencia || '—'}</div>
+                </LineBox>
               </div>
             </section>
 
-            <section ref={pageRituaisRef} className="h-[1123px] w-[794px] overflow-hidden rounded-[18px] bg-[#f7f7f5] p-8 shadow-2xl">
-              <div className="grid h-full grid-rows-[auto_1fr] gap-4 border-[3px] border-zinc-900 p-6 text-zinc-900">
-                <LineBox title="Rituais"><RowList items={data.rituais} /><div className="mt-3 border-t-2 border-zinc-900 pt-3 text-[11px] leading-5">{data.rituaisNotas || 'Sem descrição adicional'}</div></LineBox>
-                <LineBox title="História e contexto"><LinedText text={data.historia} minLines={28} /></LineBox>
+            {/* PÁGINA 3: RITUAIS */}
+            <section ref={pdfPageRituaisRef} className="h-[1123px] w-[794px] shrink-0 bg-[#f7f7f5] p-8 shadow-2xl overflow-hidden relative text-zinc-900 font-sans">
+              <div className="flex h-full flex-col gap-4 border-[3px] border-zinc-900 p-6">
+                <LineBox title="Rituais" className="flex-1">
+                  <div className="space-y-4 text-[12px] leading-relaxed">
+                    {data.rituais.length === 0 ? '—' : data.rituais.map((item, i) => {
+                      const ritual = typeof item === 'string' ? { nome: item, descricao: '' } : item;
+                      if (!ritual.nome.trim()) return null;
+                      return (
+                        <div key={i} className="border-b border-zinc-300 pb-3 last:border-0">
+                          <div className="font-bold text-[13px] uppercase tracking-wider">{ritual.nome}</div>
+                          {ritual.descricao && <div className="mt-1 whitespace-pre-wrap">{ritual.descricao}</div>}
+                        </div>
+                      );
+                    })}
+                    {data.rituais.every(r => !(typeof r === 'string' ? r : r.nome).trim()) && 'Nenhum ritual adicionado.'}
+                  </div>
+                </LineBox>
+                <LineBox title="História" className="h-[400px] shrink-0">
+                  <div className="text-[12px] leading-relaxed whitespace-pre-wrap">{data.historia || '—'}</div>
+                </LineBox>
               </div>
             </section>
 
-            <section ref={pageInformacoesRef} className="h-[1123px] w-[794px] overflow-hidden rounded-[18px] bg-[#f7f7f5] p-8 shadow-2xl">
-              <div className="grid h-full grid-rows-[auto_1fr_1fr] gap-4 border-[3px] border-zinc-900 p-6 text-zinc-900">
-                <div className="grid grid-cols-2 gap-4">
-                  <LineBox title="Anotações gerais"><LinedText text={data.anotacoesGerais} minLines={14} /></LineBox>
-                  <LineBox title="Itens"><RowList items={data.itens} /><div className="mt-3 border-t-2 border-zinc-900 pt-3 text-[11px] leading-5">{data.itensNotas || '—'}</div></LineBox>
+            {/* PÁGINA 4: INFORMAÇÕES */}
+            <section ref={pdfPageInformacoesRef} className="h-[1123px] w-[794px] shrink-0 bg-[#f7f7f5] p-8 shadow-2xl overflow-hidden relative text-zinc-900 font-sans">
+              <div className="flex h-full flex-col gap-4 border-[3px] border-zinc-900 p-6">
+                <div className="grid grid-cols-2 gap-4 flex-none">
+                  <LineBox title="Itens">
+                    <RowList items={data.itens} />
+                  </LineBox>
+                  <LineBox title="Detalhes dos Itens">
+                    <div className="text-[12px] leading-relaxed whitespace-pre-wrap">{data.itensNotas || '—'}</div>
+                  </LineBox>
                 </div>
-                <LineBox title="Informações extras"><LinedText text={data.informacoesGerais} minLines={14} /></LineBox>
-                <LineBox title="Dados de mesa"><LinedText text={`PV: ${data.pvAtual || '0'}/${data.pv || '0'}\nPE: ${data.peAtual || '0'}/${data.pe || '0'}\nSanidade: ${data.sanidadeAtual || '0'}/${data.sanidade || '0'}\nIniciativa: ${data.iniciativa || '—'}\nPercepção: ${data.percepcao || '—'}\nDeslocamento: ${data.deslocamento || '—'}\nResistências: ${data.resistencias || '—'}\nVulnerabilidades: ${data.vulnerabilidades || '—'}\nImunidades: ${data.imunidades || '—'}`} minLines={16} /></LineBox>
+                <LineBox title="Anotações Gerais" className="flex-1">
+                  <div className="text-[12px] leading-relaxed whitespace-pre-wrap">{data.anotacoesGerais || '—'}</div>
+                </LineBox>
+                <LineBox title="Informações Extras" className="flex-1">
+                  <div className="text-[12px] leading-relaxed whitespace-pre-wrap">{data.informacoesGerais || '—'}</div>
+                </LineBox>
               </div>
             </section>
+
           </div>
         </main>
       </div>
