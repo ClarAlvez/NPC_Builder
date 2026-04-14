@@ -366,7 +366,7 @@ export default function App() {
   const [savedMessage, setSavedMessage] = useState('');
   const [formTab, setFormTab] = useState('gerais');
   
-  const previewPageGeneralRef = useRef(null);
+  const pdfPageGeneralRef = useRef(null);
   const pdfPageHabilidadesRef = useRef(null);
   const pdfPageRituaisRef = useRef(null);
   const pdfPageInformacoesRef = useRef(null);
@@ -581,7 +581,7 @@ export default function App() {
       });
 
       const pages = [
-        previewPageGeneralRef.current,
+        pdfPageGeneralRef.current,
         pdfPageHabilidadesRef.current,
         pdfPageRituaisRef.current,
         pdfPageInformacoesRef.current,
@@ -973,7 +973,7 @@ export default function App() {
           <div className="w-max mx-auto flex flex-col items-center gap-8 px-4">
 
             {/* PÁGINA 1: FICHA GERAL + ATAQUES */}
-            <section ref={previewPageGeneralRef} className="h-[1123px] w-[794px] shrink-0 bg-[#f7f7f5] shadow-2xl overflow-hidden relative text-zinc-900 font-sans">
+            <section ref={pdfPageGeneralRef} className="h-[1123px] w-[794px] shrink-0 bg-[#f7f7f5] shadow-2xl overflow-hidden relative text-zinc-900 font-sans">
               <div className="flex h-full flex-col border-[3px] border-zinc-900 px-6 py-5">
                 <div className="absolute inset-0 opacity-[0.03] flex items-center justify-center pointer-events-none">
                   <div className="text-[200px] font-black tracking-[0.25em]">OP</div>
