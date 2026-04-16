@@ -1010,8 +1010,7 @@ export default function App() {
                   
                   {/* BOX 3: LOGO DA ORDEM */}
                   <div className="flex flex-col items-end justify-center text-right flex-1 overflow-hidden">
-                    <div className="text-5xl font-black uppercase leading-none tracking-tight text-zinc-900">Ordem</div>
-                    <div className="-mt-1 text-5xl font-black uppercase leading-none tracking-tight text-zinc-900">Paranormal</div>
+          
                     <div className="mt-2 text-xl font-black uppercase tracking-[0.22em] text-zinc-900">Ficha NPC</div>
                   </div>
 
