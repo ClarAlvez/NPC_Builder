@@ -364,6 +364,7 @@ function AttackPreviewList({ attacks }) {
       attack.teste ||
       attack.dano ||
       attack.danoMedio ||
+      attack.danoCritico ||
       attack.extra
   )
 
@@ -382,12 +383,13 @@ function AttackPreviewList({ attacks }) {
             {ataque.nome || 'Ataque'}
           </div>
 
-          <div className="mt-2 grid gap-2 text-sm text-zinc-300 md:grid-cols-4">
-            <Line label="Teste" value={ataque.teste} />
-            <Line label="Dano" value={ataque.dano} />
-            <Line label="Dano médio" value={ataque.danoMedio} />
-            <Line label="Extra" value={ataque.extra} />
-          </div>
+          <div className="mt-2 grid gap-2 text-sm text-zinc-300 md:grid-cols-5">
+          <Line label="Teste" value={ataque.teste} />
+          <Line label="Dano" value={ataque.dano} />
+          <Line label="Dano médio" value={ataque.danoMedio} />
+          <Line label="Crítico" value={ataque.danoCritico} />
+          <Line label="Extra" value={ataque.extra} />
+        </div>
         </div>
       ))}
     </div>

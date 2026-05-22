@@ -19,6 +19,7 @@ export function normalizeNpc(npc = {}) {
             teste: '',
             dano: '',
             danoMedio: '',
+            danoCritico: '',
             extra: '',
             ...ataque,
           }))

@@ -61,6 +61,7 @@ export const createEmptyNpc = () => ({
       teste: '',
       dano: '',
       danoMedio: '',
+      danoCritico: '',
       extra: '',
     },
   ],

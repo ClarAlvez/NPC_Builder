@@ -25,7 +25,7 @@ export function useNpcManager(user, sidebarTab) {
   const [expandedEntries, setExpandedEntries] = useState({})
 
   const [diceHistory, setDiceHistory] = useState([])
-  const [sheetRolls, setSheetRolls] = useState([])
+  const [sheetRollsByNpc, setSheetRollsByNpc] = useState({})
 
   const initialLoadDone = useRef(false)
   const autosaveTimeout = useRef(null)
@@ -34,6 +34,11 @@ export function useNpcManager(user, sidebarTab) {
     () => npcs.find((npc) => npc.id === activeNpcId) || npcs[0] || null,
     [npcs, activeNpcId]
   )
+
+  const activeSheetRolls = useMemo(() => {
+    if (!data?.id) return []
+    return sheetRollsByNpc[data.id] || []
+  }, [sheetRollsByNpc, data?.id])
 
   const teamOptions = useMemo(() => getTeamOptions(npcs), [npcs])
 
@@ -364,6 +369,7 @@ export function useNpcManager(user, sidebarTab) {
           teste: '',
           dano: '',
           danoMedio: '',
+          danoCritico: '',
           extra: '',
         },
       ],
@@ -384,6 +390,7 @@ export function useNpcManager(user, sidebarTab) {
                 teste: '',
                 dano: '',
                 danoMedio: '',
+                danoCritico: '',
                 extra: '',
               },
             ],
@@ -545,27 +552,36 @@ export function useNpcManager(user, sidebarTab) {
     }))
   }
 
-  const rollFromSheet = (command, label = 'Rolagem') => {
-    try {
-      const result = parseRollemLikeInput(command)
-
-      const entry = {
-        ...result,
-        id: crypto.randomUUID(),
-        input: `${label}: ${command}`,
-        createdAt: new Date().toLocaleTimeString('pt-BR'),
-      }
-
-      setSheetRolls((prev) => [entry, ...prev].slice(0, 10))
-      setDiceHistory((prev) => [entry, ...prev].slice(0, 30))
-
-      setSavedMessage(`Rolagem feita: ${label}`)
-      setTimeout(() => setSavedMessage(''), 1600)
-    } catch (err) {
-      setSavedMessage(err.message || 'Erro ao rolar dados')
-      setTimeout(() => setSavedMessage(''), 2500)
+  const rollFromSheet = (command, label = 'Rolagem', npcId = data?.id) => {
+  try {
+    if (!npcId) {
+      throw new Error('Nenhum NPC ativo para registrar a rolagem.')
     }
+
+    const result = parseRollemLikeInput(command)
+
+    const entry = {
+      ...result,
+      id: crypto.randomUUID(),
+      npcId,
+      input: `${label}: ${command}`,
+      createdAt: new Date().toLocaleTimeString('pt-BR'),
+    }
+
+    setSheetRollsByNpc((prev) => ({
+      ...prev,
+      [npcId]: [entry, ...(prev[npcId] || [])].slice(0, 30),
+    }))
+
+    setDiceHistory((prev) => [entry, ...prev].slice(0, 30))
+
+    setSavedMessage(`Rolagem feita: ${label}`)
+    setTimeout(() => setSavedMessage(''), 1600)
+  } catch (err) {
+    setSavedMessage(err.message || 'Erro ao rolar dados')
+    setTimeout(() => setSavedMessage(''), 2500)
   }
+}
 
   return {
     npcs,
@@ -600,7 +616,8 @@ export function useNpcManager(user, sidebarTab) {
     diceHistory,
     setDiceHistory,
 
-    sheetRolls,
+    sheetRollsByNpc,
+    activeSheetRolls,
 
     createNpc,
     saveAll,

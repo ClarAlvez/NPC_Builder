@@ -9,6 +9,7 @@ import {
   Shield,
   Swords,
   Plus,
+  History,
 } from 'lucide-react'
 import { elementOptions } from '../../models/npc'
 import SectionTitle from '../../components/common/SectionTitle'
@@ -35,6 +36,7 @@ export default function NpcForm({ manager }) {
     sheetRolls,
     expandedEntries,
     toggleEntry,
+    activeSheetRolls,
   } = manager
 
   const [formTab, setFormTab] = useState('gerais')
@@ -50,6 +52,7 @@ export default function NpcForm({ manager }) {
     { id: 'habilidades', label: 'Habilidades', icon: WandSparkles },
     { id: 'rituais', label: 'Rituais', icon: BookOpen },
     { id: 'informacoes', label: 'Itens e infos', icon: StickyNote },
+    { id: 'rolagens', label: 'Rolagens', icon: History },
   ]
 
   return (
@@ -138,20 +141,6 @@ export default function NpcForm({ manager }) {
       </div>
 
       <div className={`space-y-6 flex-1 min-h-0 pb-10 ${scrollClass}`}>
-        {sheetRolls.length > 0 && (
-          <div className="rounded-[22px] border border-zinc-800 bg-zinc-950/70 p-4">
-            <div className="mb-3 text-xs font-bold uppercase tracking-[0.24em] text-zinc-500">
-              Últimas rolagens da ficha
-            </div>
-
-            <div className="space-y-2">
-              {sheetRolls.slice(0, 3).map((entry) => (
-                <RollResultLine key={entry.id} entry={entry} />
-              ))}
-            </div>
-          </div>
-        )}
-
         {formTab === 'gerais' && (
           <GeneralTab
             data={data}
@@ -168,6 +157,10 @@ export default function NpcForm({ manager }) {
             removeAttack={removeAttack}
             rollFromSheet={rollFromSheet}
           />
+        )}
+
+        {formTab === 'rolagens' && (
+          <RollsTab rolls={activeSheetRolls} />
         )}
 
         {formTab === 'habilidades' && (
@@ -596,6 +589,19 @@ function AttacksTab({
             />
 
             <Field
+              label="Dano crítico"
+              value={ataque.danoCritico}
+              onChange={(event) =>
+                handleAttackChange(index, 'danoCritico', event.target.value)
+              }
+              placeholder="Ex: 4d8+8"
+              rollable
+              onRoll={(command) =>
+                rollFromSheet(command, `${ataque.nome || 'Ataque'} - Crítico`)
+              }
+            />
+
+            <Field
               label="Crítico / Alcance / Especial"
               value={ataque.extra}
               onChange={(event) =>
@@ -613,6 +619,41 @@ function AttacksTab({
           <Plus className="h-4 w-4" />
           Adicionar ataque
         </button>
+      </div>
+    </>
+  )
+}
+
+function RollsTab({ rolls }) {
+  return (
+    <>
+      <SectionTitle>Rolagens da ficha</SectionTitle>
+
+      <div className="space-y-3">
+        {rolls.length ? (
+          rolls.map((entry) => (
+            <div
+              key={entry.id}
+              className="rounded-[22px] border border-zinc-800 bg-zinc-950/70 p-3"
+            >
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <div className="truncate text-sm font-black text-white">
+                  {entry.input}
+                </div>
+
+                <div className="shrink-0 text-xs text-zinc-500">
+                  {entry.createdAt}
+                </div>
+              </div>
+
+              <RollResultLine entry={entry} />
+            </div>
+          ))
+        ) : (
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-8 text-center text-sm text-zinc-500">
+            Nenhuma rolagem feita nesta ficha ainda.
+          </div>
+        )}
       </div>
     </>
   )
