@@ -37,6 +37,9 @@ export default function NpcForm({ manager }) {
     expandedEntries,
     toggleEntry,
     activeSheetRolls,
+    handleSkillChange,
+    addSkill,
+    removeSkill,
   } = manager
 
   const [formTab, setFormTab] = useState('gerais')
@@ -145,6 +148,9 @@ export default function NpcForm({ manager }) {
           <GeneralTab
             data={data}
             handleChange={handleChange}
+            handleSkillChange={handleSkillChange}
+            addSkill={addSkill}
+            removeSkill={removeSkill}
             rollFromSheet={rollFromSheet}
           />
         )}
@@ -244,7 +250,14 @@ function StatQuickAdjust({ label, current, max, onAdjust }) {
   )
 }
 
-function GeneralTab({ data, handleChange, rollFromSheet }) {
+function GeneralTab({
+  data,
+  handleChange,
+  handleSkillChange,
+  addSkill,
+  removeSkill,
+  rollFromSheet,
+}) {
   return (
     <>
       <div>
@@ -459,14 +472,12 @@ function GeneralTab({ data, handleChange, rollFromSheet }) {
       <div>
         <SectionTitle>Combate</SectionTitle>
 
-        <TextBlock
-          label="Perícias"
-          value={data.pericias}
-          onChange={(event) => handleChange('pericias', event.target.value)}
-          placeholder="Ex.: Investigação 1d20+10, Ocultismo 1d20+12..."
-          rows={6}
-          rollable
-          onRoll={rollFromSheet}
+        <SkillsEditor
+          skills={Array.isArray(data.pericias) ? data.pericias : []}
+          handleSkillChange={handleSkillChange}
+          addSkill={addSkill}
+          removeSkill={removeSkill}
+          rollFromSheet={rollFromSheet}
         />
 
         <TextBlock
@@ -511,6 +522,71 @@ function GeneralTab({ data, handleChange, rollFromSheet }) {
         )}
       </div>
     </>
+  )
+}
+
+function SkillsEditor({
+  skills,
+  handleSkillChange,
+  addSkill,
+  removeSkill,
+  rollFromSheet,
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="text-xs uppercase tracking-[0.24em] text-zinc-400">
+        Perícias
+      </div>
+
+      <div className="space-y-2">
+        {skills.map((skill, index) => (
+          <div
+            key={index}
+            className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2 rounded-2xl border border-zinc-800 bg-zinc-950/50 p-2"
+          >
+            <input
+              className={inputStyle}
+              value={skill.nome || ''}
+              onChange={(event) =>
+                handleSkillChange(index, 'nome', event.target.value)
+              }
+              placeholder="Nome da perícia"
+            />
+
+            <Field
+              label=""
+              value={skill.teste || ''}
+              onChange={(event) =>
+                handleSkillChange(index, 'teste', event.target.value)
+              }
+              placeholder="Ex: 1d20+8"
+              rollable
+              onRoll={(command) =>
+                rollFromSheet(command, skill.nome || `Perícia ${index + 1}`)
+              }
+            />
+
+            <button
+              type="button"
+              onClick={() => removeSkill(index)}
+              className="rounded-xl border border-zinc-800 px-3 text-zinc-400 hover:border-red-800 hover:text-red-300"
+              title="Remover perícia"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <button
+        type="button"
+        onClick={addSkill}
+        className="inline-flex items-center gap-2 rounded-2xl border border-zinc-700 px-3 py-2 text-sm font-semibold hover:border-zinc-500"
+      >
+        <Plus className="h-4 w-4" />
+        Adicionar perícia
+      </button>
+    </div>
   )
 }
 
@@ -671,6 +747,15 @@ function RitualsTab({
 }) {
   return (
     <>
+      <SectionTitle>DT de rituais</SectionTitle>
+
+      <Field
+        label="DT de rituais"
+        value={data.dtRitual}
+        onChange={(event) => handleChange('dtRitual', event.target.value)}
+        placeholder="Ex: 22"
+      />
+
       <SectionTitle>Rituais</SectionTitle>
 
       <div className="space-y-4">

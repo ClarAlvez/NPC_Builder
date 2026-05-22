@@ -114,6 +114,7 @@ function QuickPreview({ data, resumoTopo, manager }) {
                     <Line label="Equipe" value={data.equipe} />
                     <Line label="Origem" value={data.origem} />
                     <Line label="Elemento" value={data.elementoPrincipal} />
+                    <Line label="DT de rituais" value={data.dtRitual} />
                     <Line label="Percepção" value={data.percepcao} />
                     <Line label="Iniciativa" value={data.iniciativa} />
                   </div>
@@ -197,6 +198,7 @@ function FullPreview({ data, manager }) {
             <PreviewBox title="Elemento e atributos">
               <div className="space-y-4 text-sm text-zinc-300">
                 <Line label="Elemento principal" value={data.elementoPrincipal} />
+                <Line label="DT de rituais" value={data.dtRitual} />
                 <AttributeGrid data={data} />
               </div>
             </PreviewBox>
@@ -204,9 +206,7 @@ function FullPreview({ data, manager }) {
         </div>
 
         <PreviewBox title="Perícias">
-          <div className="whitespace-pre-wrap text-sm text-zinc-300">
-            {data.pericias || '—'}
-          </div>
+          <SkillPreviewList skills={data.pericias} />
         </PreviewBox>
 
         <PreviewBox title="Defesas adicionais">
@@ -513,6 +513,35 @@ function NotesBlock({ title, value }) {
       <div className="whitespace-pre-wrap text-sm text-zinc-300">
         {value}
       </div>
+    </div>
+  )
+}
+
+function SkillPreviewList({ skills }) {
+  const valid = (Array.isArray(skills) ? skills : []).filter(
+    (skill) => skill.nome || skill.teste
+  )
+
+  if (!valid.length) {
+    return <div className="text-sm text-zinc-500 italic">Nenhuma perícia adicionada.</div>
+  }
+
+  return (
+    <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+      {valid.map((skill, index) => (
+        <div
+          key={index}
+          className="rounded-2xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm"
+        >
+          <div className="font-bold text-white">
+            {skill.nome || `Perícia ${index + 1}`}
+          </div>
+
+          <div className="mt-1 text-zinc-400">
+            {skill.teste || '—'}
+          </div>
+        </div>
+      ))}
     </div>
   )
 }

@@ -26,6 +26,7 @@ export function useNpcManager(user, sidebarTab) {
 
   const [diceHistory, setDiceHistory] = useState([])
   const [sheetRollsByNpc, setSheetRollsByNpc] = useState({})
+  const [rollToast, setRollToast] = useState(null)
 
   const initialLoadDone = useRef(false)
   const autosaveTimeout = useRef(null)
@@ -359,6 +360,40 @@ export function useNpcManager(user, sidebarTab) {
     }))
   }
 
+  const handleSkillChange = (index, field, value) => {
+    updateNpc((npc) => ({
+      ...npc,
+      pericias: (npc.pericias || []).map((item, i) =>
+        i === index ? { ...item, [field]: value } : item
+      ),
+    }))
+  }
+
+  const addSkill = () => {
+    updateNpc((npc) => ({
+      ...npc,
+      pericias: [
+        ...(Array.isArray(npc.pericias) ? npc.pericias : []),
+        {
+          nome: '',
+          teste: '',
+        },
+      ],
+    }))
+  }
+
+const removeSkill = (index) => {
+  updateNpc((npc) => {
+    const current = Array.isArray(npc.pericias) ? npc.pericias : []
+    const next = current.filter((_, i) => i !== index)
+
+    return {
+      ...npc,
+      pericias: next.length ? next : [{ nome: '', teste: '' }],
+    }
+  })
+}
+
   const addAttack = () => {
     updateNpc((npc) => ({
       ...npc,
@@ -552,7 +587,7 @@ export function useNpcManager(user, sidebarTab) {
     }))
   }
 
-  const rollFromSheet = (command, label = 'Rolagem', npcId = data?.id) => {
+const rollFromSheet = (command, label = 'Rolagem', npcId = data?.id) => {
   try {
     if (!npcId) {
       throw new Error('Nenhum NPC ativo para registrar a rolagem.')
@@ -575,6 +610,12 @@ export function useNpcManager(user, sidebarTab) {
 
     setDiceHistory((prev) => [entry, ...prev].slice(0, 30))
 
+    setRollToast({
+      id: crypto.randomUUID(),
+      title: label,
+      entry,
+    })
+
     setSavedMessage(`Rolagem feita: ${label}`)
     setTimeout(() => setSavedMessage(''), 1600)
   } catch (err) {
@@ -582,6 +623,10 @@ export function useNpcManager(user, sidebarTab) {
     setTimeout(() => setSavedMessage(''), 2500)
   }
 }
+
+  const closeRollToast = () => {
+    setRollToast(null)
+  }
 
   return {
     npcs,
@@ -644,5 +689,11 @@ export function useNpcManager(user, sidebarTab) {
 
     toggleEntry,
     rollFromSheet,
+    rollToast,
+    closeRollToast,
+
+    handleSkillChange,
+    addSkill,
+    removeSkill,
   }
 }

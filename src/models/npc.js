@@ -43,7 +43,8 @@ export const createEmptyNpc = () => ({
   vulnerabilidades: '',
   imunidades: '',
 
-  pericias: '',
+  dtRitual: '',
+  pericias: [{ nome: '', teste: '' }],
 
   aparencia: '',
   anotacoesGerais: '',

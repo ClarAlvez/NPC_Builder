@@ -4,59 +4,73 @@ export function normalizeNpc(npc = {}) {
   const base = createEmptyNpc()
 
   const normalized = {
-    ...base,
-    ...npc,
+  ...base,
+  ...npc,
 
-    visibleInControl:
-      typeof npc.visibleInControl === 'boolean'
-        ? npc.visibleInControl
-        : true,
+  dtRitual: npc.dtRitual || '',
 
-    ataques:
-      Array.isArray(npc.ataques) && npc.ataques.length
-        ? npc.ataques.map((ataque) => ({
-            nome: '',
-            teste: '',
-            dano: '',
-            danoMedio: '',
-            danoCritico: '',
-            extra: '',
-            ...ataque,
-          }))
-        : base.ataques,
+  pericias: normalizePericias(npc.pericias),
 
-    habilidades:
-      Array.isArray(npc.habilidades) && npc.habilidades.length
-        ? npc.habilidades.map((habilidade) => ({
-            nome: '',
-            descricao: '',
-            ...habilidade,
-          }))
-        : base.habilidades,
+  visibleInControl:
+    typeof npc.visibleInControl === 'boolean'
+      ? npc.visibleInControl
+      : true,
 
-    itens:
-      Array.isArray(npc.itens) && npc.itens.length
-        ? npc.itens.map((item) => ({
-            nome: '',
-            descricao: '',
-            ...item,
-          }))
-        : base.itens,
-
-    rituais:
-      Array.isArray(npc.rituais) && npc.rituais.length
-        ? npc.rituais.map((ritual) => ({
-            nome: '',
-            descricao: '',
-            dano: '',
-            ...ritual,
-          }))
-        : base.rituais,
+  ataques:
+    Array.isArray(npc.ataques) && npc.ataques.length
+      ? npc.ataques.map((ataque) => ({
+          nome: '',
+          teste: '',
+          dano: '',
+          danoMedio: '',
+          danoCritico: '',
+          extra: '',
+          ...ataque,
+        }))
+      : base.ataques,
   }
 
   delete normalized.elementosSecundarios
 
   return normalized
+}
+
+function normalizePericias(pericias) {
+  if (Array.isArray(pericias) && pericias.length) {
+    return pericias.map((pericia) => {
+      if (typeof pericia === 'string') {
+        return {
+          nome: pericia,
+          teste: '',
+        }
+      }
+
+      return {
+        nome: '',
+        teste: '',
+        ...pericia,
+      }
+    })
+  }
+
+  if (typeof pericias === 'string' && pericias.trim()) {
+    return pericias
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const parts = line.split(/[:|-]/)
+        const nome = parts[0]?.trim() || line
+        const teste = parts.slice(1).join(' ').trim()
+
+        return {
+          nome,
+          teste,
+        }
+      })
+  }
+
+  return [{ nome: '', teste: '' }]
 }
 
 export function normalizeNpcRow(row) {
