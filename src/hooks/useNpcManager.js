@@ -401,6 +401,7 @@ const removeSkill = (index) => {
         ...(npc.ataques || []),
         {
           nome: '',
+          custoPe: '',
           teste: '',
           dano: '',
           danoMedio: '',
@@ -422,12 +423,13 @@ const removeSkill = (index) => {
           : [
               {
                 nome: '',
+                custoPe: '',
                 teste: '',
                 dano: '',
                 danoMedio: '',
                 danoCritico: '',
                 extra: '',
-              },
+              }
             ],
       }
     })
@@ -459,27 +461,49 @@ const removeSkill = (index) => {
   }
 
   const addComplexItem = (listName) => {
-    updateNpc((npc) => {
-      const defaultItem =
-        listName === 'rituais'
-          ? { nome: '', descricao: '', dano: '' }
-          : { nome: '', descricao: '' }
+  updateNpc((npc) => {
+    let defaultItem = {
+      nome: '',
+      descricao: '',
+    }
 
-      return {
-        ...npc,
-        [listName]: [...(npc[listName] || []), defaultItem],
+    if (listName === 'rituais') {
+      defaultItem = {
+        nome: '',
+        custoPe: '',
+        descricao: '',
+        dano: '',
       }
-    })
-  }
+    }
+
+    if (listName === 'habilidades') {
+      defaultItem = {
+        nome: '',
+        custoPe: '',
+        descricao: '',
+      }
+    }
+
+    return {
+      ...npc,
+      [listName]: [...(npc[listName] || []), defaultItem],
+    }
+  })
+}
 
   const removeListItem = (field, index) => {
     updateNpc((npc) => {
       const next = npc[field].filter((_, i) => i !== index)
 
-      const fallback =
-        field === 'rituais'
-          ? [{ nome: '', descricao: '', dano: '' }]
-          : [{ nome: '', descricao: '' }]
+      let fallback = [{ nome: '', descricao: '' }]
+
+      if (field === 'rituais') {
+        fallback = [{ nome: '', custoPe: '', descricao: '', dano: '' }]
+      }
+
+      if (field === 'habilidades') {
+        fallback = [{ nome: '', custoPe: '', descricao: '' }]
+      }
 
       return {
         ...npc,

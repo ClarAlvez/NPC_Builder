@@ -17,17 +17,60 @@ export function normalizeNpc(npc = {}) {
       : true,
 
   ataques:
-    Array.isArray(npc.ataques) && npc.ataques.length
-      ? npc.ataques.map((ataque) => ({
+  Array.isArray(npc.ataques) && npc.ataques.length
+    ? npc.ataques.map((ataque) => ({
+        nome: '',
+        custoPe: '',
+        teste: '',
+        dano: '',
+        danoMedio: '',
+        danoCritico: '',
+        extra: '',
+        ...ataque,
+      }))
+    : base.ataques,
+
+  habilidades:
+  Array.isArray(npc.habilidades) && npc.habilidades.length
+    ? npc.habilidades.map((habilidade) => {
+        if (typeof habilidade === 'string') {
+          return {
+            nome: habilidade,
+            custoPe: '',
+            descricao: '',
+          }
+        }
+
+        return {
           nome: '',
-          teste: '',
+          custoPe: '',
+          descricao: '',
+          ...habilidade,
+        }
+      })
+    : base.habilidades,
+
+    rituais:
+  Array.isArray(npc.rituais) && npc.rituais.length
+    ? npc.rituais.map((ritual) => {
+        if (typeof ritual === 'string') {
+          return {
+            nome: ritual,
+            custoPe: '',
+            descricao: '',
+            dano: '',
+          }
+        }
+
+        return {
+          nome: '',
+          custoPe: '',
+          descricao: '',
           dano: '',
-          danoMedio: '',
-          danoCritico: '',
-          extra: '',
-          ...ataque,
-        }))
-      : base.ataques,
+          ...ritual,
+        }
+      })
+    : base.rituais,
   }
 
   delete normalized.elementosSecundarios

@@ -59,6 +59,7 @@ export const createEmptyNpc = () => ({
   ataques: [
     {
       nome: '',
+      custoPe: '',
       teste: '',
       dano: '',
       danoMedio: '',
@@ -70,6 +71,7 @@ export const createEmptyNpc = () => ({
   habilidades: [
     {
       nome: '',
+      custoPe: '',
       descricao: '',
     },
   ],
@@ -84,6 +86,7 @@ export const createEmptyNpc = () => ({
   rituais: [
     {
       nome: '',
+      custoPe: '',
       descricao: '',
       dano: '',
     },

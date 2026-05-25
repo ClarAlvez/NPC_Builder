@@ -608,9 +608,15 @@ function AttacksTab({
             className="grid grid-cols-1 gap-3 rounded-2xl border border-zinc-800 bg-zinc-950/40 p-3 md:grid-cols-2"
           >
             <div className="md:col-span-2 flex items-center justify-between gap-3">
-              <div className="text-sm font-bold text-zinc-300">
+              <div className="min-w-0">
+              <div className="truncate text-sm font-bold text-zinc-300">
                 {ataque.nome || `Ataque ${index + 1}`}
               </div>
+
+              <div className="mt-1 text-xs text-zinc-500">
+                Custo em PE: {ataque.custoPe || '—'}
+              </div>
+            </div>
 
               <button
                 type="button"
@@ -627,6 +633,15 @@ function AttacksTab({
               onChange={(event) =>
                 handleAttackChange(index, 'nome', event.target.value)
               }
+            />
+
+            <Field
+              label="Custo em PE"
+              value={ataque.custoPe}
+              onChange={(event) =>
+                handleAttackChange(index, 'custoPe', event.target.value)
+              }
+              placeholder="Ex: 2"
             />
 
             <Field
@@ -771,6 +786,7 @@ function RitualsTab({
             <CollapsibleEntry
               key={key}
               title={ritual.nome || `Ritual ${index + 1}`}
+              subtitle={`Custo em PE: ${ritual.custoPe || '—'}`}
               expanded={!!expandedEntries[key]}
               onToggle={() => toggleEntry(key)}
               onRemove={() => removeListItem('rituais', index)}
@@ -789,6 +805,20 @@ function RitualsTab({
                     )
                   }
                   placeholder={`Nome do Ritual ${index + 1}`}
+                />
+
+                <Field
+                  label="Custo em PE"
+                  value={ritual.custoPe}
+                  onChange={(event) =>
+                    handleComplexItemChange(
+                      'rituais',
+                      index,
+                      'custoPe',
+                      event.target.value
+                    )
+                  }
+                  placeholder="Ex: 3"
                 />
 
                 <Field
@@ -901,6 +931,22 @@ function ComplexTab({
                   }
                   placeholder={`Nome ${index + 1}`}
                 />
+
+                {listName === 'habilidades' && (
+                  <input
+                    className={inputStyle}
+                    value={current.custoPe || ''}
+                    onChange={(event) =>
+                      handleComplexItemChange(
+                        listName,
+                        index,
+                        'custoPe',
+                        event.target.value
+                      )
+                    }
+                    placeholder="Custo em PE"
+                  />
+                )}
 
                 <textarea
                   className={`${inputStyle} min-h-[96px] resize-y`}
@@ -1035,6 +1081,11 @@ function ComplexList({
           <CollapsibleEntry
             key={key}
             title={current.nome || `${title} ${index + 1}`}
+            subtitle={
+              listName === 'habilidades'
+                ? `Custo em PE: ${current.custoPe || '—'}`
+                : ''
+            }
             expanded={!!expandedEntries[key]}
             onToggle={() => toggleEntry(key)}
             onRemove={() => removeListItem(listName, index)}
@@ -1088,6 +1139,7 @@ function ComplexList({
 
 function CollapsibleEntry({
   title,
+  subtitle = '',
   expanded,
   onToggle,
   onRemove,
@@ -1102,8 +1154,16 @@ function CollapsibleEntry({
           onClick={onToggle}
           className="flex flex-1 items-center justify-between rounded-xl px-2 py-2 text-left hover:bg-zinc-900"
         >
-          <span className="truncate text-sm font-semibold text-zinc-100">
-            {title}
+          <span className="min-w-0">
+            <span className="block truncate text-sm font-semibold text-zinc-100">
+              {title}
+            </span>
+
+            {subtitle && (
+              <span className="mt-1 block truncate text-xs text-zinc-500">
+                {subtitle}
+              </span>
+            )}
           </span>
 
           <span className="text-xs font-bold uppercase tracking-[0.18em] text-violet-400">

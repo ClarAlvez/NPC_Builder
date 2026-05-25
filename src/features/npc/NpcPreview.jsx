@@ -361,6 +361,7 @@ function AttackPreviewList({ attacks }) {
   const valid = (attacks || []).filter(
     (attack) =>
       attack.nome ||
+      attack.custoPe ||
       attack.teste ||
       attack.dano ||
       attack.danoMedio ||
@@ -382,6 +383,12 @@ function AttackPreviewList({ attacks }) {
           <div className="font-black text-white">
             {ataque.nome || 'Ataque'}
           </div>
+
+          {ataque.custoPe && (
+            <div className="mt-1 text-xs text-zinc-500">
+              Custo em PE: {ataque.custoPe}
+            </div>
+          )}
 
           <div className="mt-2 grid gap-2 text-sm text-zinc-300 md:grid-cols-5">
           <Line label="Teste" value={ataque.teste} />
@@ -423,6 +430,11 @@ function CollapsiblePreviewList({
           <PreviewCollapsibleEntry
             key={key}
             title={current.nome || `${sectionKey} ${index + 1}`}
+            subtitle={
+              current.custoPe
+                ? `Custo em PE: ${current.custoPe}`
+                : ''
+            }
             expanded={!!manager.expandedEntries[key]}
             onToggle={() => manager.toggleEntry(key)}
           >
@@ -460,6 +472,11 @@ function RitualPreviewList({ items, sectionKey, manager }) {
           <PreviewCollapsibleEntry
             key={key}
             title={current.nome || `Ritual ${index + 1}`}
+            subtitle={
+              current.custoPe
+                ? `Custo em PE: ${current.custoPe}`
+                : ''
+            }
             expanded={!!manager.expandedEntries[key]}
             onToggle={() => manager.toggleEntry(key)}
           >
@@ -479,7 +496,13 @@ function RitualPreviewList({ items, sectionKey, manager }) {
   )
 }
 
-function PreviewCollapsibleEntry({ title, expanded, onToggle, children }) {
+function PreviewCollapsibleEntry({
+    title,
+    subtitle = '',
+    expanded,
+    onToggle,
+    children,
+  }) {
   return (
     <div className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-3">
       <button
@@ -487,8 +510,16 @@ function PreviewCollapsibleEntry({ title, expanded, onToggle, children }) {
         onClick={onToggle}
         className="flex w-full items-center justify-between rounded-xl px-2 py-2 text-left hover:bg-zinc-900"
       >
-        <span className="truncate text-sm font-semibold text-zinc-100">
-          {title}
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-semibold text-zinc-100">
+            {title}
+          </span>
+
+          {subtitle && (
+            <span className="mt-1 block truncate text-xs text-zinc-500">
+              {subtitle}
+            </span>
+          )}
         </span>
 
         <span className="text-xs font-bold uppercase tracking-[0.18em] text-violet-400">
